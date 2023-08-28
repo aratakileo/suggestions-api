@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "suggestions-api",
+  "version": "${version}",
+  "name": "SuggestionsAPI",
+  "description": "API for working with Minecraft suggestions",
+  "authors": [
+    "Arataki Leo"
+  ],
+  "contact": {
+    "sources": "https://github.com/aratakileo/suggestions-api",
+    "homepage": "https://modrinth.com/mod/suggestions-api",
+    "issues": "https://github.com/aratakileo/suggestions-api/issues"
+  },
+  "license": "LGPL-3.0",
+  "icon": "assets/suggestionsapi/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.aratakileo.suggestionsapi.SuggestionsAPI"
+    ]
+  },
+  "mixins": [
+    "suggestionsapi.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "*",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [
+        "library"
+      ]
+    }
+  }
+}
