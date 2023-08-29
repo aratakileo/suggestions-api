@@ -1,14 +1,18 @@
 package io.github.aratakileo.suggestionsapi.suggestion;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import io.github.aratakileo.suggestionsapi.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
 
 public class IconSuggestion extends SimpleSuggestion implements SuggestionRenderer {
-    public static final int DEFAULT_ICON_SIZE = 8;
+    public static final int RENDER_ICON_SIZE = 8;
 
     private final ResourceLocation iconResource;
     private final int iconWidth, iconHeight;
@@ -26,10 +30,6 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
         this.iconHeight = iconHeight;
     }
 
-    public IconSuggestion(@NotNull String suggestionText, @NotNull ResourceLocation iconResource) {
-        this(suggestionText, iconResource, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE);
-    }
-
     @Override
     public int getWidth() {
         return iconWidth + Minecraft.getInstance().font.width(suggestionText) + 6;
@@ -43,7 +43,16 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
             int y,
             int color
     ) {
-        RenderUtil.renderTexture(guiGraphics, iconResource, x + 1, y, iconWidth, iconHeight);
+        RenderUtil.renderFittedCenterTexture(
+                guiGraphics,
+                iconResource,
+                x + 1,
+                y,
+                iconWidth,
+                iconHeight,
+                RENDER_ICON_SIZE,
+                RENDER_ICON_SIZE
+        );
 
         return guiGraphics.drawString(
                 font,
@@ -52,5 +61,19 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
                 y,
                 color
         );
+    }
+
+    public static @Nullable IconSuggestion from(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation iconResource
+    ) {
+        try {
+            final var resource = Minecraft.getInstance().getResourceManager().getResource(iconResource).get();
+            final var nativeImage = NativeImage.read(resource.open());
+
+            return new IconSuggestion(suggestionText, iconResource, nativeImage.getWidth(), nativeImage.getHeight());
+        } catch (IOException ignore) {}
+
+        return null;
     }
 }

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface DynamicSuggestionsInjector {
+public interface SuggestionsInjector {
     @Nullable <T extends Suggestion> List<T> getSuggestions(@NotNull String currentExpression);
 
     default int getExpressionStartOffset() {

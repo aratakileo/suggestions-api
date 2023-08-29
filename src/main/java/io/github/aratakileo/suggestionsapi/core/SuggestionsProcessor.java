@@ -2,7 +2,7 @@ package io.github.aratakileo.suggestionsapi.core;
 
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestions;
-import io.github.aratakileo.suggestionsapi.suggestion.DynamicSuggestionsInjector;
+import io.github.aratakileo.suggestionsapi.suggestion.SuggestionsInjector;
 import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,19 +20,19 @@ public class SuggestionsProcessor {
     private final String textUptoCursor;
     private final int wordStart;
     private final HashMap<String, Suggestion> suggestions;
-    private final ArrayList<DynamicSuggestionsInjector> dynamicSuggestionsInjectors;
+    private final ArrayList<SuggestionsInjector> suggestionsInjectors;
     private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
 
     private SuggestionsProcessor(
             @NotNull HashMap<String, Suggestion> suggestions,
-            @NotNull ArrayList<DynamicSuggestionsInjector> dynamicSuggestionsInjectors,
+            @NotNull ArrayList<SuggestionsInjector> suggestionsInjectors,
             @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer,
             @NotNull String textUptoCursor,
             int wordStart
     ) {
         this.textUptoCursor = textUptoCursor;
         this.suggestions = suggestions;
-        this.dynamicSuggestionsInjectors = dynamicSuggestionsInjectors;
+        this.suggestionsInjectors = suggestionsInjectors;
         this.dynamicSuggestionsConsumer = dynamicSuggestionsConsumer;
         this.wordStart = wordStart;
     }
@@ -41,9 +41,9 @@ public class SuggestionsProcessor {
         var minOffset = -1;
 
         final var currentExpression = textUptoCursor.substring(wordStart);
-        final var dynamicSuggestionsBuffer = new HashMap<DynamicSuggestionsInjector, Collection<Suggestion>>();
+        final var dynamicSuggestionsBuffer = new HashMap<SuggestionsInjector, Collection<Suggestion>>();
 
-        for (final var dynamicSuggestionsInjector: dynamicSuggestionsInjectors) {
+        for (final var dynamicSuggestionsInjector: suggestionsInjectors) {
             final var suggestions = dynamicSuggestionsInjector.getSuggestions(currentExpression);
 
             if (suggestions == null || suggestions.isEmpty()) continue;
@@ -110,7 +110,7 @@ public class SuggestionsProcessor {
 
     public static @Nullable SuggestionsProcessor from(
             @NotNull HashMap<String, Suggestion> suggestions,
-            @NotNull ArrayList<DynamicSuggestionsInjector> dynamicSuggestionsInjectors,
+            @NotNull ArrayList<SuggestionsInjector> suggestionsInjectors,
             @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer,
             @NotNull String textUptoCursor
     ) {
@@ -126,7 +126,7 @@ public class SuggestionsProcessor {
 
         return new SuggestionsProcessor(
                 suggestions,
-                dynamicSuggestionsInjectors,
+                suggestionsInjectors,
                 dynamicSuggestionsConsumer,
                 textUptoCursor,
                 wordStart
@@ -135,18 +135,18 @@ public class SuggestionsProcessor {
 
     public static class Builder {
         private final HashMap<String, Suggestion> suggestions;
-        private final ArrayList<DynamicSuggestionsInjector> dynamicSuggestionsInjectors;
+        private final ArrayList<SuggestionsInjector> suggestionsInjectors;
         private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
 
         private String textUptoCursor;
 
         public Builder(
                 @NotNull HashMap<String, Suggestion> suggestions,
-                @NotNull ArrayList<DynamicSuggestionsInjector> dynamicSuggestionsInjectors,
+                @NotNull ArrayList<SuggestionsInjector> suggestionsInjectors,
                 @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer
         ) {
             this.suggestions = suggestions;
-            this.dynamicSuggestionsInjectors = dynamicSuggestionsInjectors;
+            this.suggestionsInjectors = suggestionsInjectors;
             this.dynamicSuggestionsConsumer = dynamicSuggestionsConsumer;
         }
 
@@ -158,7 +158,7 @@ public class SuggestionsProcessor {
         public @Nullable SuggestionsProcessor build() {
             return SuggestionsProcessor.from(
                     suggestions,
-                    dynamicSuggestionsInjectors,
+                    suggestionsInjectors,
                     dynamicSuggestionsConsumer,
                     textUptoCursor
             );
