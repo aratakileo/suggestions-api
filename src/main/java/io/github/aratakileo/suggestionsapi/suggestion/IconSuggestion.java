@@ -1,15 +1,11 @@
 package io.github.aratakileo.suggestionsapi.suggestion;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import io.github.aratakileo.suggestionsapi.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.IOException;
 
 public class IconSuggestion extends SimpleSuggestion implements SuggestionRenderer {
     public static final int RENDER_ICON_SIZE = 8;
@@ -69,25 +65,5 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
     @Override
     public boolean shouldShowFor(String currentExpression) {
         return alwaysShow || super.shouldShowFor(currentExpression);
-    }
-
-    public static @Nullable IconSuggestion from(
-            @NotNull String suggestionText,
-            @NotNull ResourceLocation iconResource,
-            boolean alwaysShow
-    ) {
-        try {
-            final var resource = Minecraft.getInstance().getResourceManager().getResource(iconResource).get();
-            final var nativeImage = NativeImage.read(resource.open());
-
-            return new IconSuggestion(
-                    suggestionText,
-                    iconResource, nativeImage.getWidth(),
-                    nativeImage.getHeight(),
-                    alwaysShow
-            );
-        } catch (IOException ignore) {}
-
-        return null;
     }
 }
