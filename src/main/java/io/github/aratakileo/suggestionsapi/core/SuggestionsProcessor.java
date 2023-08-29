@@ -50,17 +50,17 @@ public class SuggestionsProcessor {
 
             dynamicSuggestionsBuffer.put(dynamicSuggestionsInjector, suggestions);
 
-            if (minOffset != -1) {
-                minOffset = Math.min(minOffset, dynamicSuggestionsInjector.getExpressionStartOffset());
-                continue;
-            }
-
             if (dynamicSuggestionsInjector.getExpressionStartOffset() == 0) {
                 minOffset = 0;
                 break;
             }
 
-            minOffset = Integer.MAX_VALUE;
+            if (minOffset != -1) {
+                minOffset = Math.min(minOffset, dynamicSuggestionsInjector.getExpressionStartOffset());
+                continue;
+            }
+
+            minOffset = dynamicSuggestionsInjector.getExpressionStartOffset();
         }
 
         final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
