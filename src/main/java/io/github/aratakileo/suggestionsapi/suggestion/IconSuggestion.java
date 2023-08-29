@@ -14,6 +14,7 @@ import java.io.IOException;
 public class IconSuggestion extends SimpleSuggestion implements SuggestionRenderer {
     public static final int RENDER_ICON_SIZE = 8;
 
+    private final boolean alwaysShow;
     private final ResourceLocation iconResource;
     private final int iconWidth, iconHeight;
 
@@ -21,13 +22,15 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
             @NotNull String suggestionText,
             @NotNull ResourceLocation iconResource,
             int iconWidth,
-            int iconHeight
+            int iconHeight,
+            boolean alwaysShow
     ) {
         super(suggestionText);
 
         this.iconResource = iconResource;
         this.iconWidth = iconWidth;
         this.iconHeight = iconHeight;
+        this.alwaysShow = alwaysShow;
     }
 
     @Override
@@ -63,15 +66,26 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
         );
     }
 
+    @Override
+    public boolean shouldShowFor(String currentExpression) {
+        return alwaysShow || super.shouldShowFor(currentExpression);
+    }
+
     public static @Nullable IconSuggestion from(
             @NotNull String suggestionText,
-            @NotNull ResourceLocation iconResource
+            @NotNull ResourceLocation iconResource,
+            boolean alwaysShow
     ) {
         try {
             final var resource = Minecraft.getInstance().getResourceManager().getResource(iconResource).get();
             final var nativeImage = NativeImage.read(resource.open());
 
-            return new IconSuggestion(suggestionText, iconResource, nativeImage.getWidth(), nativeImage.getHeight());
+            return new IconSuggestion(
+                    suggestionText,
+                    iconResource, nativeImage.getWidth(),
+                    nativeImage.getHeight(),
+                    alwaysShow
+            );
         } catch (IOException ignore) {}
 
         return null;

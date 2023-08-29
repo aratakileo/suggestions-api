@@ -1,9 +1,6 @@
 package io.github.aratakileo.suggestionsapi;
 
-import io.github.aratakileo.suggestionsapi.suggestion.SuggestionsInjector;
-import io.github.aratakileo.suggestionsapi.suggestion.IconSuggestion;
-import io.github.aratakileo.suggestionsapi.suggestion.SimpleSuggestion;
-import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
+import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.resources.ResourceLocation;
@@ -32,8 +29,23 @@ public class SuggestionsAPI implements ClientModInitializer {
         suggestions.put(suggestionText, new SimpleSuggestion(suggestionText));
     }
 
+    public static void addSuggestion(@NotNull String suggestionText, boolean alwaysShow) {
+        suggestions.put(
+                suggestionText,
+                alwaysShow ? new AlwaysShownSuggestion(suggestionText) : new SimpleSuggestion(suggestionText)
+        );
+    }
+
     public static boolean addSuggestion(@NotNull String suggestionText, @NotNull ResourceLocation icon) {
-        final var suggestion = IconSuggestion.from(suggestionText, icon);
+        return addSuggestion(suggestionText, icon, false);
+    }
+
+    public static boolean addSuggestion(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon,
+            boolean alwaysShow
+    ) {
+        final var suggestion = IconSuggestion.from(suggestionText, icon, alwaysShow);
 
         if (suggestion == null) return false;
 
