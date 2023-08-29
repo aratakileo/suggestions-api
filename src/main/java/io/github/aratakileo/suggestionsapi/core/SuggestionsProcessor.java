@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -37,10 +38,18 @@ public class SuggestionsProcessor {
     }
 
     public @Nullable CompletableFuture<Suggestions> getPendingSuggestions() {
-        var dynamicSuggestions = new HashMap<String, Suggestion>();
         var minOffset = -1;
 
+        final var currentExpression = textUptoCursor.substring(wordStart);
+        final var dynamicSuggestionsBuffer = new HashMap<DynamicSuggestionsInjector, Collection<Suggestion>>();
+
         for (final var dynamicSuggestionsInjector: dynamicSuggestionsInjectors) {
+            final var suggestions = dynamicSuggestionsInjector.getSuggestions(currentExpression);
+
+            if (suggestions == null || suggestions.isEmpty()) continue;
+
+            dynamicSuggestionsBuffer.put(dynamicSuggestionsInjector, suggestions);
+
             if (minOffset != -1) {
                 minOffset = Math.min(minOffset, dynamicSuggestionsInjector.getExpressionStartOffset());
                 continue;
@@ -55,23 +64,26 @@ public class SuggestionsProcessor {
         }
 
         final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
-        final var currentExpression = textUptoCursor.substring(wordStart);
 
-        for (final var dynamicSuggestionsInjector: dynamicSuggestionsInjectors) {
+        var dynamicSuggestions = new HashMap<String, Suggestion>();
+
+        for (final var dynamicSuggestionsEntry: dynamicSuggestionsBuffer.entrySet()) {
+            final var dynamicSuggestionsInjector = dynamicSuggestionsEntry.getKey();
+
             if (
                     minOffset != -1
                             && dynamicSuggestionsInjector.isIsolated()
                             && dynamicSuggestionsInjector.getExpressionStartOffset() > minOffset
             ) continue;
 
-            final var dynamicSuggestionTexts = dynamicSuggestionsInjector.getSuggestions(currentExpression);
+            for (final var suggestion: dynamicSuggestionsEntry.getValue()) {
+                final var offset = dynamicSuggestionsInjector.getExpressionStartOffset();
 
-            if (dynamicSuggestionTexts == null) continue;
+                if (!suggestion.shouldShowFor(currentExpression.substring(offset))) continue;
 
-            for (final var suggestion: dynamicSuggestionTexts) {
                 applicableMojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
                         StringRange.between(
-                                wordStart + dynamicSuggestionsInjector.getExpressionStartOffset(),
+                                wordStart + offset,
                                 textUptoCursor.length()
                         ),
                         suggestion.getSuggestionText()
