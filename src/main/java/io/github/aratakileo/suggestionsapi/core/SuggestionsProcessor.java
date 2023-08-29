@@ -50,17 +50,17 @@ public class SuggestionsProcessor {
 
             dynamicSuggestionsBuffer.put(dynamicSuggestionsInjector, suggestions);
 
-            if (dynamicSuggestionsInjector.getExpressionStartOffset() == 0) {
+            if (dynamicSuggestionsInjector.getStartOffset() == 0) {
                 minOffset = 0;
                 break;
             }
 
             if (minOffset != -1) {
-                minOffset = Math.min(minOffset, dynamicSuggestionsInjector.getExpressionStartOffset());
+                minOffset = Math.min(minOffset, dynamicSuggestionsInjector.getStartOffset());
                 continue;
             }
 
-            minOffset = dynamicSuggestionsInjector.getExpressionStartOffset();
+            minOffset = dynamicSuggestionsInjector.getStartOffset();
         }
 
         final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
@@ -73,11 +73,11 @@ public class SuggestionsProcessor {
             if (
                     minOffset != -1
                             && dynamicSuggestionsInjector.isIsolated()
-                            && dynamicSuggestionsInjector.getExpressionStartOffset() > minOffset
+                            && dynamicSuggestionsInjector.getStartOffset() > minOffset
             ) continue;
 
             for (final var suggestion: dynamicSuggestionsEntry.getValue()) {
-                final var offset = dynamicSuggestionsInjector.getExpressionStartOffset();
+                final var offset = dynamicSuggestionsInjector.getStartOffset();
 
                 if (!suggestion.shouldShowFor(currentExpression.substring(offset))) continue;
 
@@ -103,9 +103,9 @@ public class SuggestionsProcessor {
                 ));
         });
 
-        if (suggestions.isEmpty()) return null;
-
-        return CompletableFuture.completedFuture(Suggestions.create(textUptoCursor, applicableMojangSuggestions));
+        return applicableMojangSuggestions.isEmpty() ? null : CompletableFuture.completedFuture(
+                Suggestions.create(textUptoCursor, applicableMojangSuggestions)
+        );
     }
 
     public static @Nullable SuggestionsProcessor from(
