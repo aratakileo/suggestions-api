@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 public class SuggestionsAPI implements ClientModInitializer {
     private final static HashMap<String, Suggestion> suggestions = new HashMap<>();
-    private final static ArrayList<SuggestionsInjector> suggestionsInjectors = new ArrayList<>();
+    private final static ArrayList<Injector> injectors = new ArrayList<>();
 
     private static HashMap<String, Suggestion> dynamicSuggestions;
 
@@ -20,11 +20,11 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     }
 
-    public static <T extends Suggestion> void addSuggestion(@NotNull T suggestion) {
+    public static void addSuggestion(@NotNull Suggestion suggestion) {
         suggestions.put(suggestion.getSuggestionText(), suggestion);
     }
 
-    public static <T extends Suggestion> void removeSuggestion(@NotNull T suggestion) {
+    public static void removeSuggestion(@NotNull Suggestion suggestion) {
         if (!suggestions.containsValue(suggestion)) return;
 
         suggestions.values().remove((Suggestion) suggestions);
@@ -39,14 +39,14 @@ public class SuggestionsAPI implements ClientModInitializer {
                 ? suggestions.get(suggestionText) : dynamicSuggestions.get(suggestionText);
     }
 
-    public static <T extends SuggestionsInjector> void registerSuggestionsInjector(@NotNull T suggestionsInjector) {
-        suggestionsInjectors.add(suggestionsInjector);
+    public static void registerSuggestionsInjector(@NotNull Injector injector) {
+        injectors.add(injector);
     }
 
     public static @NotNull SuggestionsProcessor.Builder getSuggestionProcessorBuilder() {
         return new SuggestionsProcessor.Builder(
                 suggestions,
-                suggestionsInjectors,
+                injectors,
                 newDynamicSuggestions -> dynamicSuggestions = newDynamicSuggestions
         );
     }

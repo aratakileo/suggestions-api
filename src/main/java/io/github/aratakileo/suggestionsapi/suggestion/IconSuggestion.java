@@ -7,10 +7,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-public class IconSuggestion extends SimpleSuggestion implements SuggestionRenderer {
+public class IconSuggestion implements Suggestion, SuggestionRenderer {
     public static final int RENDER_ICON_SIZE = 8;
 
-    private final boolean alwaysShow;
+    protected final String suggestionText;
     private final ResourceLocation iconResource;
     private final int iconWidth, iconHeight;
 
@@ -18,15 +18,12 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
             @NotNull String suggestionText,
             @NotNull ResourceLocation iconResource,
             int iconWidth,
-            int iconHeight,
-            boolean alwaysShow
+            int iconHeight
     ) {
-        super(suggestionText);
-
+        this.suggestionText = suggestionText;
         this.iconResource = iconResource;
         this.iconWidth = iconWidth;
         this.iconHeight = iconHeight;
-        this.alwaysShow = alwaysShow;
     }
 
     @Override
@@ -63,7 +60,7 @@ public class IconSuggestion extends SimpleSuggestion implements SuggestionRender
     }
 
     @Override
-    public boolean shouldShowFor(String currentExpression) {
-        return alwaysShow || super.shouldShowFor(currentExpression);
+    public String getSuggestionText() {
+        return suggestionText;
     }
 }

@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 @Mixin(CommandSuggestions.class)
 public abstract class CommandSuggestionsMixin {
@@ -39,20 +40,31 @@ public abstract class CommandSuggestionsMixin {
         if (commandsOnly || hasSlash) return;
 
         final var suggestionProcessor = SuggestionsAPI.getSuggestionProcessorBuilder()
-                .setTextUptoCursor(contentText.substring(0, cursorPosition))
-                .build();
+                .setOtherValues(
+                        contentText.substring(0, cursorPosition),
+                        (textUpToCursor, suggestionList) -> {
+                            if (pendingSuggestions != null) {
+                                suggestionList = Stream.concat(
+                                        pendingSuggestions.join().getList().stream(),
+                                        suggestionList.stream()
+                                ).toList();
+                            }
 
-        if (suggestionProcessor == null) return;
+                            pendingSuggestions = CompletableFuture.completedFuture(Suggestions.create(
+                                    textUpToCursor,
+                                    suggestionList
+                            ));
 
-        pendingSuggestions = suggestionProcessor.getPendingSuggestions();
+                            pendingSuggestions.thenRun(() -> {
+                                if (pendingSuggestions.isDone())
+                                    ((CommandSuggestions) (Object) this).showSuggestions(false);
+                            });
+                        }
+                ).build();
 
-        if (pendingSuggestions == null) return;
+        if (suggestionProcessor == null || !suggestionProcessor.initExecutors()) return;
 
-        pendingSuggestions.thenRun(() -> {
-            if (!pendingSuggestions.isDone()) return;
-            ((CommandSuggestions)(Object)this).showSuggestions(false);
-        });
-
+        suggestionProcessor.runExecutors();
         ci.cancel();
     }
 }

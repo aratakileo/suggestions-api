@@ -11,33 +11,60 @@ import java.io.IOException;
 public interface Suggestion {
     String getSuggestionText();
 
-    default boolean shouldShowFor(String currentExpression) {
+    default boolean shouldShowFor(@NotNull String currentExpression) {
         return getSuggestionText().toLowerCase().startsWith(currentExpression.toLowerCase());
     }
 
-    static @NotNull SimpleSuggestion simple(@NotNull String suggestionText) {
-        return new SimpleSuggestion(suggestionText);
+    @NotNull
+    static Suggestion simple(@NotNull String suggestionText) {
+        return () -> suggestionText;
     }
 
-    static @NotNull AlwaysShownSuggestion alwaysShown(@NotNull String suggestionText) {
-        return new AlwaysShownSuggestion(suggestionText);
+    @NotNull
+    static Suggestion alwaysShown(@NotNull String suggestionText) {
+        return new Suggestion() {
+            @Override
+            public String getSuggestionText() {
+                return suggestionText;
+            }
+
+            @Override
+            public boolean shouldShowFor(@NotNull String currentExpression) {
+                return true;
+            }
+        };
     }
 
-    static @Nullable IconSuggestion withIcon(
+    @Nullable
+    static IconSuggestion withIcon(
             @NotNull String suggestionText,
-            @NotNull ResourceLocation icon,
-            boolean alwaysShow
+            @NotNull ResourceLocation icon
     ) {
         try {
             final var resource = Minecraft.getInstance().getResourceManager().getResource(icon).get();
             final var nativeImage = NativeImage.read(resource.open());
 
-            return new IconSuggestion(
-                    suggestionText,
-                    icon, nativeImage.getWidth(),
-                    nativeImage.getHeight(),
-                    alwaysShow
-            );
+            return new IconSuggestion(suggestionText, icon, nativeImage.getWidth(), nativeImage.getHeight());
+        } catch (IOException ignore) {}
+
+        return null;
+    }
+
+    @Nullable
+    static IconSuggestion alwaysShownWithIcon(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon
+    ) {
+        try {
+            final var resource = Minecraft.getInstance().getResourceManager().getResource(icon).get();
+            final var nativeImage = NativeImage.read(resource.open());
+
+            return new IconSuggestion(suggestionText, icon, nativeImage.getWidth(), nativeImage.getHeight()) {
+                @Override
+                public boolean shouldShowFor(@NotNull String currentExpression) {
+                    return true;
+                }
+            };
         } catch (IOException ignore) {}
 
         return null;
