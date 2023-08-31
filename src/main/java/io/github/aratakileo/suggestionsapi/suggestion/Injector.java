@@ -1,11 +1,13 @@
 package io.github.aratakileo.suggestionsapi.suggestion;
 
+import io.github.aratakileo.suggestionsapi.util.TripleFunction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public interface Injector {
@@ -17,14 +19,14 @@ public interface Injector {
         return false;
     }
 
-    static @NotNull SuggestionsInjector withSuggestions(
+    static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter
     ) {
-        return withSuggestions(pattern, uncheckedSuggestionsGetter, false);
+        return simple(pattern, uncheckedSuggestionsGetter, false);
     }
 
-    static @NotNull SuggestionsInjector withSuggestions(
+    static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter,
             boolean isIsolated
@@ -58,27 +60,67 @@ public interface Injector {
 
     static @NotNull AsyncInjector async(
             @NotNull Pattern pattern,
-            BiFunction<
+            TripleFunction<
                     @NotNull String,
                     @NotNull Integer,
-                    @Nullable Supplier<@Nullable List<Suggestion>>
+                    @NotNull Consumer<@Nullable List<Suggestion>>,
+                    @Nullable Runnable
+                    > uncheckedSupplierGetter
+    ) {
+        return async(pattern, uncheckedSupplierGetter, false);
+    }
+
+    static @NotNull AsyncInjector async(
+            @NotNull Pattern pattern,
+            TripleFunction<
+                    @NotNull String,
+                    @NotNull Integer,
+                    @NotNull Consumer<@Nullable List<Suggestion>>,
+                    @Nullable Runnable
                     > uncheckedSupplierGetter,
             boolean isIsolated
     ) {
         return new AsyncInjector() {
             private int startOffset = 0;
+            private CompletableFuture<Void> currentProcess = null;
+            private Runnable applierBody = null;
 
             @Override
             @Nullable
-            public Supplier<@Nullable List<Suggestion>> getSupplier(@NotNull String currentExpression) {
+            public CompletableFuture<Void> getCurrentProcess() {
+                return currentProcess;
+            }
+
+            @Override
+            public void setApplierBody(@Nullable Runnable applierBody) {
+                this.applierBody = applierBody;
+            }
+
+            @Override
+            public void runAsyncApplier() {
+                currentProcess = CompletableFuture.runAsync(applierBody);
+            }
+
+            @Override
+            public boolean initAsyncApplier(
+                    @NotNull String currentExpression,
+                    @NotNull Consumer<@Nullable List<Suggestion>> applier
+            ) {
                 final var lastMatchedStart = getLastMatchedStart(pattern, currentExpression);
 
                 if (lastMatchedStart == -1)
-                    return null;
+                    return false;
+
+                if (currentProcess != null && !currentProcess.isDone()) {
+                    currentProcess.cancel(true);
+                    currentProcess = null;
+                }
 
                 startOffset = lastMatchedStart;
 
-                return uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart);
+                setApplierBody(uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart, applier));
+
+                return applierBody != null;
             }
 
             @Override

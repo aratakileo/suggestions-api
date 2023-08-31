@@ -62,9 +62,8 @@ public abstract class CommandSuggestionsMixin {
                         }
                 ).build();
 
-        if (suggestionProcessor == null || !suggestionProcessor.initExecutors()) return;
+        if (suggestionProcessor == null || !suggestionProcessor.process()) return;
 
-        suggestionProcessor.runExecutors();
         ci.cancel();
     }
 }

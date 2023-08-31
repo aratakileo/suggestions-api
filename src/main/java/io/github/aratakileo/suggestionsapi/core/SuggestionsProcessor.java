@@ -15,11 +15,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public class SuggestionsProcessor {
@@ -32,7 +29,6 @@ public class SuggestionsProcessor {
     private final ArrayList<Injector> injectors;
     private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
     private final BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier;
-    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     private final ArrayList<Callable<Void>> tasks = new ArrayList<>();
 
@@ -52,28 +48,46 @@ public class SuggestionsProcessor {
         this.wordStart = wordStart;
     }
 
-    public boolean initExecutors() {
+    public boolean process() {
         var minOffset = -1;
 
         final var currentExpression = textUptoCursor.substring(wordStart);
-        final var suggestionsInjectorsBuffer = new HashMap<Injector, Collection<Suggestion>>();
-        final var asyncInjectorsBuffer = new HashMap<Injector, Supplier<@Nullable List<Suggestion>>>();
+        final var suggestionsInjectorsBuffer = new HashMap<SuggestionsInjector, Collection<Suggestion>>();
+        final var asyncInjectorsBuffer = new ArrayList<AsyncInjector>();
 
         for (final var injector: injectors) {
-            if (injector instanceof SuggestionsInjector) {
-                final var suggestions = ((SuggestionsInjector) injector).getSuggestions(currentExpression);
+            if (injector instanceof SuggestionsInjector suggestionsInjector) {
+                final var suggestions = suggestionsInjector.getSuggestions(currentExpression);
 
                 if (suggestions == null || suggestions.isEmpty()) continue;
 
-                suggestionsInjectorsBuffer.put(injector, suggestions);
-            } else if (injector instanceof AsyncInjector) {
-                final var supplier = ((AsyncInjector) injector).getSupplier(currentExpression);
+                suggestionsInjectorsBuffer.put(suggestionsInjector, suggestions);
+            } else if (injector instanceof AsyncInjector asyncInjector) {
+                final var willApplySuggestions = asyncInjector.initAsyncApplier(
+                        currentExpression,
+                        suggestionList -> {
+                            if (suggestionList == null || suggestionList.isEmpty()) return;
 
-                if (supplier == null) {
-                    continue;
-                }
+                            final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
+                            final var offset = injector.getStartOffset();
 
-                asyncInjectorsBuffer.put(injector, supplier);
+                            suggestionList.forEach(suggestion -> {
+                                if (suggestion.shouldShowFor(currentExpression.substring(offset)))
+                                    mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
+                                            StringRange.between(wordStart + offset, textUptoCursor.length()),
+                                            suggestion.getSuggestionText()
+                                    ));
+                            });
+
+                            if (mojangSuggestions.isEmpty()) return;
+
+                            newSuggestionsApplier.accept(textUptoCursor, mojangSuggestions);
+                        }
+                );
+
+                if (!willApplySuggestions) continue;
+
+                asyncInjectorsBuffer.add(asyncInjector);
             } else {
                 LOGGER.error("Invalid Injector! (" + injector + ")");
 
@@ -129,48 +143,21 @@ public class SuggestionsProcessor {
                 ));
         });
 
-        if (applicableMojangSuggestions.isEmpty() && asyncInjectorsBuffer.isEmpty()) return false;
+        var hasUsedAsyncInjector = false;
+
+        for (final var injector: asyncInjectorsBuffer) {
+            if (minOffset != -1 && injector.isIsolated() && injector.getStartOffset() > minOffset) continue;
+
+            hasUsedAsyncInjector = true;
+
+            injector.runAsyncApplier();
+        }
+
+        if (applicableMojangSuggestions.isEmpty() && !hasUsedAsyncInjector) return false;
 
         newSuggestionsApplier.accept(textUptoCursor, applicableMojangSuggestions);
 
-        for (final var injectorEntry: asyncInjectorsBuffer.entrySet()) {
-            final var injector = injectorEntry.getKey();
-
-            if (minOffset != -1 && injector.isIsolated() && injector.getStartOffset() > minOffset) continue;
-
-            tasks.add(() -> {
-                final var suggestions = injectorEntry.getValue().get();
-
-                if (suggestions == null || suggestions.isEmpty()) return null;
-
-                final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
-                final var offset = injector.getStartOffset();
-
-                suggestions.forEach(suggestion -> {
-                    if (suggestion.shouldShowFor(currentExpression.substring(offset)))
-                        mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
-                                StringRange.between(wordStart + offset, textUptoCursor.length()),
-                                suggestion.getSuggestionText()
-                        ));
-                });
-
-                if (mojangSuggestions.isEmpty()) return null;
-
-                newSuggestionsApplier.accept(textUptoCursor, mojangSuggestions);
-
-                return null;
-            });
-        }
-
         return true;
-    }
-
-    public void runExecutors() {
-        try {
-            executor.invokeAll(tasks);
-        } catch (Exception e) {
-            LOGGER.error("Failed to add new suggestions: ", e);
-        }
     }
 
     public static @Nullable SuggestionsProcessor from(
