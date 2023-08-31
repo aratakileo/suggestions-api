@@ -83,7 +83,7 @@ public interface Injector {
         return new AsyncInjector() {
             private int startOffset = 0;
             private CompletableFuture<Void> currentProcess = null;
-            private Runnable applierBody = null;
+            private Runnable applier = null;
 
             @Override
             @Nullable
@@ -92,13 +92,18 @@ public interface Injector {
             }
 
             @Override
-            public void setApplierBody(@Nullable Runnable applierBody) {
-                this.applierBody = applierBody;
+            public void setCurrentProcess(@Nullable CompletableFuture<Void> currentProcess) {
+                this.currentProcess = currentProcess;
             }
 
             @Override
-            public void runAsyncApplier() {
-                currentProcess = CompletableFuture.runAsync(applierBody);
+            public @Nullable Runnable getApplier() {
+                return applier;
+            }
+
+            @Override
+            public void setApplier(@Nullable Runnable applier) {
+                this.applier = applier;
             }
 
             @Override
@@ -111,16 +116,14 @@ public interface Injector {
                 if (lastMatchedStart == -1)
                     return false;
 
-                if (currentProcess != null && !currentProcess.isDone()) {
-                    currentProcess.cancel(true);
-                    currentProcess = null;
-                }
+                AsyncInjector.setApplier(
+                        this,
+                        uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart, applier)
+                );
 
                 startOffset = lastMatchedStart;
 
-                setApplierBody(uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart, applier));
-
-                return applierBody != null;
+                return this.applier != null;
             }
 
             @Override

@@ -10,12 +10,29 @@ import java.util.function.Consumer;
 public interface AsyncInjector extends Injector {
     @Nullable CompletableFuture<Void> getCurrentProcess();
 
-    void setApplierBody(@Nullable Runnable applierBody);
+    void setCurrentProcess(@Nullable CompletableFuture<Void> currentProcess);
 
-    void runAsyncApplier();
+    @Nullable Runnable getApplier();
+
+    void setApplier(@Nullable Runnable applier);
+
+    default void runAsyncApplier() {
+        if (getApplier() == null) return;
+
+        setCurrentProcess(CompletableFuture.runAsync(getApplier()));
+    }
 
     boolean initAsyncApplier(
             @NotNull String currentExpression,
             @NotNull Consumer<@Nullable List<Suggestion>> applier
     );
+
+    static void setApplier(@NotNull AsyncInjector asyncInjector, @Nullable Runnable applier) {
+        final var currentProcess = asyncInjector.getCurrentProcess();
+
+        if (currentProcess != null && !currentProcess.isDone())
+            currentProcess.cancel(true);
+
+        asyncInjector.setApplier(applier);
+    }
 }
