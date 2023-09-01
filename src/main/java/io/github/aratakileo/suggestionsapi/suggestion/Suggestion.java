@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.function.BiFunction;
 
 public interface Suggestion {
     String getSuggestionText();
@@ -21,7 +22,10 @@ public interface Suggestion {
     }
 
     @NotNull
-    static Suggestion alwaysShown(@NotNull String suggestionText) {
+    static Suggestion simple(
+            @NotNull String suggestionText,
+            @NotNull BiFunction<@NotNull String, @NotNull String, @NotNull Boolean> showCondition
+    ) {
         return new Suggestion() {
             @Override
             public String getSuggestionText() {
@@ -30,9 +34,14 @@ public interface Suggestion {
 
             @Override
             public boolean shouldShowFor(@NotNull String currentExpression) {
-                return true;
+                return showCondition.apply(suggestionText, currentExpression);
             }
         };
+    }
+
+    @NotNull
+    static Suggestion alwaysShown(@NotNull String suggestionText) {
+        return simple(suggestionText, ALWAYS_SHOW_CONDITION);
     }
 
     @Nullable
@@ -51,9 +60,10 @@ public interface Suggestion {
     }
 
     @Nullable
-    static IconSuggestion alwaysShownWithIcon(
+    static IconSuggestion withIcon(
             @NotNull String suggestionText,
-            @NotNull ResourceLocation icon
+            @NotNull ResourceLocation icon,
+            @NotNull BiFunction<@NotNull String, @NotNull String, @NotNull Boolean> showCondition
     ) {
         try {
             final var resource = Minecraft.getInstance().getResourceManager().getResource(icon).get();
@@ -62,11 +72,27 @@ public interface Suggestion {
             return new IconSuggestion(suggestionText, icon, nativeImage.getWidth(), nativeImage.getHeight()) {
                 @Override
                 public boolean shouldShowFor(@NotNull String currentExpression) {
-                    return true;
+                    return showCondition.apply(getSuggestionText(), currentExpression);
                 }
             };
         } catch (IOException ignore) {}
 
         return null;
     }
+
+    @Nullable
+    static IconSuggestion alwaysShownWithIcon(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon
+    ) {
+        return withIcon(suggestionText, icon, ALWAYS_SHOW_CONDITION);
+    }
+
+    BiFunction<
+            @NotNull String,
+            @NotNull String,
+            @NotNull Boolean
+            > ALWAYS_SHOW_CONDITION = (suggestionText, currentExpression) -> true,
+            DEFAULT_CONDITION = (suggestionText, currentExpression) -> suggestionText.toLowerCase()
+                    .startsWith(currentExpression.toLowerCase());
 }
