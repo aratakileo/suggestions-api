@@ -53,10 +53,6 @@ public class SuggestionsAPI implements ClientModInitializer {
         suggestions.put(suggestion.getSuggestionText(), suggestion);
     }
 
-    public static void registerResourceDependedInjector(@NotNull Supplier<@NotNull List<Suggestion>> injector) {
-        resourceDependedInjectors.add(injector);
-    }
-
     public static void removeSuggestion(@NotNull Suggestion suggestion) {
         if (!suggestions.containsValue(suggestion)) return;
 
@@ -74,6 +70,10 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     public static void registerSuggestionsInjector(@NotNull Injector injector) {
         injectors.add(injector);
+    }
+
+    public static void registerResourceDependedInjector(@NotNull Supplier<@NotNull List<Suggestion>> injector) {
+        resourceDependedInjectors.add(injector);
     }
 
     public static @NotNull SuggestionsProcessor.Builder getSuggestionProcessorBuilder() {
