@@ -28,7 +28,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
 
     @Override
     public int getWidth() {
-        return iconWidth + Minecraft.getInstance().font.width(suggestionText) + 6;
+        return RENDER_ICON_SIZE + Minecraft.getInstance().font.width(suggestionText) + 6;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
         return guiGraphics.drawString(
                 font,
                 suggestionText,
-                x + iconWidth + 3,
+                x + RENDER_ICON_SIZE + 3,
                 y,
                 color
         );
