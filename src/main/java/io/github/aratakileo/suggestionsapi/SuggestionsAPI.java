@@ -22,7 +22,7 @@ public class SuggestionsAPI implements ClientModInitializer {
     private final static ArrayList<Supplier<@NotNull List<Suggestion>>> resourceDependedInjectors = new ArrayList<>();
 
     private static HashMap<String, Suggestion> dynamicSuggestions;
-    private static boolean isResourcesLoaded = false;
+    private static boolean areResourcesLoaded = false;
 
     @Override
     public void onInitializeClient() {
@@ -35,9 +35,9 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                     @Override
                     public void onResourceManagerReload(ResourceManager resourceManager) {
-                        if (isResourcesLoaded) return;
+                        if (areResourcesLoaded) return;
 
-                        isResourcesLoaded = true;
+                        areResourcesLoaded = true;
 
                         resourceDependedInjectors.forEach(
                                 injector -> injector.get().forEach(SuggestionsAPI::addSuggestion)
