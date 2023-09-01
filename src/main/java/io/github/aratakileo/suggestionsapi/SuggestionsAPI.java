@@ -55,7 +55,7 @@ public class SuggestionsAPI implements ClientModInitializer {
     public static void removeSuggestion(@NotNull Suggestion suggestion) {
         if (!suggestions.containsValue(suggestion)) return;
 
-        suggestions.values().remove((Suggestion) suggestions);
+        suggestions.values().remove(suggestion);
     }
 
     public static void removeSuggestion(@NotNull String suggestionText) {
