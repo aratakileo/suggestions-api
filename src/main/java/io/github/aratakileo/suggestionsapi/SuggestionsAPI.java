@@ -72,6 +72,11 @@ public class SuggestionsAPI implements ClientModInitializer {
     }
 
     public static void registerResourceDependedInjector(@NotNull Supplier<@NotNull List<Suggestion>> injector) {
+        if (areResourcesLoaded) {
+            injector.get().forEach(SuggestionsAPI::addSuggestion);
+            return;
+        }
+
         resourceDependedInjectors.add(injector);
     }
 
