@@ -56,13 +56,23 @@ public class SuggestionsProcessor {
         final var asyncInjectorsBuffer = new ArrayList<AsyncInjector>();
 
         for (final var injector: injectors) {
+            var isActiveInjector = false;
+            var isValidInjector = false;
+
             if (injector instanceof SuggestionsInjector suggestionsInjector) {
+                isValidInjector = true;
+
                 final var suggestions = suggestionsInjector.getSuggestions(currentExpression);
 
-                if (suggestions == null || suggestions.isEmpty()) continue;
+                if (suggestions != null && !suggestions.isEmpty()) {
+                    suggestionsInjectorsBuffer.put(suggestionsInjector, suggestions);
+                    isActiveInjector = true;
+                }
+            }
 
-                suggestionsInjectorsBuffer.put(suggestionsInjector, suggestions);
-            } else if (injector instanceof AsyncInjector asyncInjector) {
+            if (injector instanceof AsyncInjector asyncInjector) {
+                isValidInjector = true;
+
                 final var willApplySuggestions = asyncInjector.initAsyncApplier(
                         currentExpression,
                         suggestionList -> {
@@ -85,14 +95,19 @@ public class SuggestionsProcessor {
                         }
                 );
 
-                if (!willApplySuggestions) continue;
+                if (willApplySuggestions) {
+                    asyncInjectorsBuffer.add(asyncInjector);
+                    isActiveInjector = true;
+                }
+            }
 
-                asyncInjectorsBuffer.add(asyncInjector);
-            } else {
+            if (!isValidInjector) {
                 LOGGER.error("Invalid Injector! (" + injector + ")");
 
                 continue;
             }
+
+            if (!isActiveInjector) continue;
 
             if (injector.getStartOffset() == 0) {
                 minOffset = 0;
