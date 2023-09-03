@@ -1,5 +1,5 @@
 # Suggestions API
-API for working with Minecraft suggestions
+API for working with Minecraft suggestions. It allows you to add suggestions with the possibility of changing their rendering. Using this library, you can add them both statically and dynamically.
 
 ### Getting started
 Merge the following with your
