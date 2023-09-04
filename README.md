@@ -36,6 +36,8 @@ dependencies {
 Quick documentation that includes the basics of the library.
 
 ### What types of embedded suggestions are there?
+The `Suggestion` interface is located in the directory `io.github.aratakileo.suggestionsapi.suggestion`.
+
 The library has two built-in types of suggestions. Below are the functions for their initialization:
 - `Suggestion.simple(...)` - simple (just text)
 - `Suggestion.withIcon(...)` - with an icon (will be rendered on the left)
@@ -74,6 +76,8 @@ final var alwaysShownSuggestion = Suggestion.alwaysShown("bonjour!");
 ```
 
 ### How to add new suggestions to the game?
+The `SuggestionsAPI` interface is located in the directory `io.github.aratakileo.suggestionsapi`.
+
 To add your own suggestion use method `SuggestionsAPI.addSuggsetion(...)`:
 ```java
 SuggestionsAPI.addSuggestion(simpleSuggestion);
@@ -85,3 +89,44 @@ SuggestionsAPI.registerResourceDependedInjector(
         () -> List.of(Suggestion.withIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")))
 );
 ```
+
+### How to dynamically inject suggestions?
+The `Injector` interface is located in the directory `io.github.aratakileo.suggestionsapi.suggestion`.
+
+There are two types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
+
+To register an injector, it is necessary to pass it to function `SuggestionsAPI.registerInjector(...)` as a single argument.
+
+To create a simple injector, there is a function `Injector.simple(...)`. As the second argument, the function takes a lambda that describes the process of generating a list of suggestions and returns it. At the same time, the lambda has its own two arguments, the first of which contains a string with the current expression (the text in the input field that touches the cursor with the right edge and is found according to the specified pattern), and the second contains a number that is an offset between the beginning of the current expression and the original expression (the text in the input field between the nearest left space and the cursor). As an example, the addition of suggestions of numbers when trying to enter any of them is presented:
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[0-9]"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Suggestion::alwaysShown).toList()
+))
+```
+
+If you need these suggestions not to be offered if the found pattern is included in the found pattern of another injector, and is not similar to it in terms of the number of characters found, then you must specify `true` as the last argument. For example:
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[0-9]"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Suggestion::alwaysShown).toList(),
+        true
+))
+```
+
+If you need the suggestions to appear synchronously, you can use the function `Injector.async(...)` to initialize the asynchronous injector. The injector initialized with this function provides a mechanism for canceling the current asynchronous process if a request for a new one has been received, and the current process has not had time to complete by this time. This function is similar to the previous one, but this time the second argument, namely lambda, returns a lambda without arguments, which will be launched as an asynchronous process, and has three arguments, the last of which is a lambda that accepts a list of new suggestions and should be used inside the lambda of an asynchronous process. For example:
+
+```java
+SuggestionsAPI.registerInjector(Injector.async(
+        /* insert your pattern here */,
+        (currentExpression, startOffset, applier) -> () -> {
+            /* insert your processing code here */
+            
+            applier.accept(/* insert list of suggestion here */)
+        }
+))
+```
+
+Just as in the case of the previous function, a third argument can be specified in this function.
