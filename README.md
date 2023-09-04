@@ -102,7 +102,7 @@ To create a simple injector, there is a function `Injector.simple(...)`. As the 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Suggestion::alwaysShown).toList()
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList()
 ))
 ```
 
@@ -111,7 +111,7 @@ If you need these suggestions not to be offered if the found pattern is included
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Suggestion::alwaysShown).toList(),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList(),
         true
 ))
 ```
