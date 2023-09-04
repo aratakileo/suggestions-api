@@ -30,8 +30,6 @@ public class SuggestionsProcessor {
     private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
     private final BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier;
 
-    private final ArrayList<Callable<Void>> tasks = new ArrayList<>();
-
     private SuggestionsProcessor(
             @NotNull HashMap<String, Suggestion> suggestions,
             @NotNull ArrayList<Injector> injectors,
