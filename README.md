@@ -91,7 +91,7 @@ SuggestionsAPI.registerResourceDependedInjector(
 ```
 
 ### How to dynamically inject suggestions?
-The `Injector` interface is located in the directory `io.github.aratakileo.suggestionsapi.suggestion`.
+The `Injector` interface is located in the directory `io.github.aratakileo.suggestionsapi.injector`.
 
 There are two types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
 

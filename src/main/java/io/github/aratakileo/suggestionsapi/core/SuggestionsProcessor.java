@@ -1,10 +1,10 @@
 package io.github.aratakileo.suggestionsapi.core;
 
 import com.mojang.brigadier.context.StringRange;
-import io.github.aratakileo.suggestionsapi.suggestion.AsyncInjector;
-import io.github.aratakileo.suggestionsapi.suggestion.Injector;
+import io.github.aratakileo.suggestionsapi.injector.AsyncInjector;
+import io.github.aratakileo.suggestionsapi.injector.Injector;
 import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
-import io.github.aratakileo.suggestionsapi.suggestion.SuggestionsInjector;
+import io.github.aratakileo.suggestionsapi.injector.SuggestionsInjector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 public class SuggestionsProcessor {
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("(\\s+)");
     private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsProcessor.class);
+    private static final HashMap<AsyncInjector, CompletableFuture<Void>> asyncProcessors = new HashMap<>();
 
     private final String textUptoCursor;
     private final int wordStart;
@@ -51,7 +52,7 @@ public class SuggestionsProcessor {
 
         final var currentExpression = textUptoCursor.substring(wordStart);
         final var suggestionsInjectorsBuffer = new HashMap<SuggestionsInjector, Collection<Suggestion>>();
-        final var asyncInjectorsBuffer = new ArrayList<AsyncInjector>();
+        final var asyncInjectorsBuffer = new HashMap<AsyncInjector, Runnable>();
 
         for (final var injector: injectors) {
             var isActiveInjector = false;
@@ -71,31 +72,38 @@ public class SuggestionsProcessor {
             if (injector instanceof AsyncInjector asyncInjector) {
                 isValidInjector = true;
 
-                final var willApplySuggestions = asyncInjector.initAsyncApplier(
-                        currentExpression,
-                        suggestionList -> {
-                            if (suggestionList == null || suggestionList.isEmpty()) return;
+                final var asyncApplier = asyncInjector.getAsyncApplier(currentExpression);
 
-                            final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
-                            final var offset = injector.getStartOffset();
+                if (asyncApplier != null) {
+                    asyncInjectorsBuffer.put(asyncInjector, () -> {
+                        final var suggestionList = asyncApplier.get();
 
-                            suggestionList.forEach(suggestion -> {
-                                if (suggestion.shouldShowFor(currentExpression.substring(offset)))
-                                    mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
-                                            StringRange.between(wordStart + offset, textUptoCursor.length()),
-                                            suggestion.getSuggestionText()
-                                    ));
-                            });
-
-                            if (mojangSuggestions.isEmpty()) return;
-
-                            newSuggestionsApplier.accept(textUptoCursor, mojangSuggestions);
+                        if (suggestionList == null || suggestionList.isEmpty()) {
+                            asyncProcessors.remove(asyncInjector);
+                            return;
                         }
-                );
 
-                if (willApplySuggestions) {
-                    asyncInjectorsBuffer.add(asyncInjector);
+                        final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
+                        final var offset = injector.getStartOffset();
+
+                        suggestionList.forEach(suggestion -> {
+                            if (suggestion.shouldShowFor(currentExpression.substring(offset)))
+                                mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
+                                        StringRange.between(wordStart + offset, textUptoCursor.length()),
+                                        suggestion.getSuggestionText()
+                                ));
+                        });
+
+                        if (mojangSuggestions.isEmpty()) {
+                            asyncProcessors.remove(asyncInjector);
+                            return;
+                        }
+
+                        newSuggestionsApplier.accept(textUptoCursor, mojangSuggestions);
+                    });
+
                     isActiveInjector = true;
+                    asyncProcessors.remove(asyncInjector);
                 }
             }
 
@@ -158,12 +166,23 @@ public class SuggestionsProcessor {
 
         var hasUsedAsyncInjector = false;
 
-        for (final var injector: asyncInjectorsBuffer) {
+        for (final var injectorEntry: asyncInjectorsBuffer.entrySet()) {
+            final var injector = injectorEntry.getKey();
+
             if (minOffset != -1 && injector.isIsolated() && injector.getStartOffset() > minOffset) continue;
 
             hasUsedAsyncInjector = true;
 
-            injector.runAsyncApplier();
+            CompletableFuture<Void> currentCompletableFuture;
+
+            if (
+                    asyncProcessors.containsKey(injector) && !(
+                            currentCompletableFuture = asyncProcessors.get(injector)
+                    ).isDone()
+            )
+                currentCompletableFuture.cancel(true);
+
+            asyncProcessors.put(injector, CompletableFuture.runAsync(injectorEntry.getValue()));
         }
 
         if (applicableMojangSuggestions.isEmpty() && !hasUsedAsyncInjector) return false;

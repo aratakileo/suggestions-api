@@ -1,5 +1,6 @@
 package io.github.aratakileo.suggestionsapi;
 
+import io.github.aratakileo.suggestionsapi.injector.Injector;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
 import net.fabricmc.api.ClientModInitializer;

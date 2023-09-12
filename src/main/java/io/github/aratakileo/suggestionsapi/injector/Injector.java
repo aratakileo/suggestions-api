@@ -1,13 +1,12 @@
-package io.github.aratakileo.suggestionsapi.suggestion;
+package io.github.aratakileo.suggestionsapi.injector;
 
-import io.github.aratakileo.suggestionsapi.util.TripleFunction;
+import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public interface Injector {
@@ -60,11 +59,10 @@ public interface Injector {
 
     static @NotNull AsyncInjector async(
             @NotNull Pattern pattern,
-            TripleFunction<
+            BiFunction<
                     @NotNull String,
                     @NotNull Integer,
-                    @NotNull Consumer<@Nullable List<Suggestion>>,
-                    @Nullable Runnable
+                    @Nullable List<Suggestion>
                     > uncheckedSupplierGetter
     ) {
         return async(pattern, uncheckedSupplierGetter, false);
@@ -72,58 +70,29 @@ public interface Injector {
 
     static @NotNull AsyncInjector async(
             @NotNull Pattern pattern,
-            TripleFunction<
+            BiFunction<
                     @NotNull String,
                     @NotNull Integer,
-                    @NotNull Consumer<@Nullable List<Suggestion>>,
-                    @Nullable Runnable
+                    @Nullable List<Suggestion>
                     > uncheckedSupplierGetter,
             boolean isIsolated
     ) {
         return new AsyncInjector() {
             private int startOffset = 0;
-            private CompletableFuture<Void> currentProcess = null;
-            private Runnable applier = null;
 
             @Override
             @Nullable
-            public CompletableFuture<Void> getCurrentProcess() {
-                return currentProcess;
-            }
-
-            @Override
-            public void setCurrentProcess(@Nullable CompletableFuture<Void> currentProcess) {
-                this.currentProcess = currentProcess;
-            }
-
-            @Override
-            public @Nullable Runnable getApplier() {
-                return applier;
-            }
-
-            @Override
-            public void setApplier(@Nullable Runnable applier) {
-                this.applier = applier;
-            }
-
-            @Override
-            public boolean initAsyncApplier(
-                    @NotNull String currentExpression,
-                    @NotNull Consumer<@Nullable List<Suggestion>> applier
+            public Supplier<@Nullable List<Suggestion>> getAsyncApplier(
+                    @NotNull String currentExpression
             ) {
                 final var lastMatchedStart = getLastMatchedStart(pattern, currentExpression);
 
                 if (lastMatchedStart == -1)
-                    return false;
-
-                AsyncInjector.setApplier(
-                        this,
-                        uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart, applier)
-                );
+                    return null;
 
                 startOffset = lastMatchedStart;
 
-                return this.applier != null;
+                return () -> uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart);
             }
 
             @Override
