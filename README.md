@@ -121,10 +121,10 @@ If you need the suggestions to appear synchronously, you can use the function `I
 ```java
 SuggestionsAPI.registerInjector(Injector.async(
         /* insert your pattern here */,
-        (currentExpression, startOffset, applier) -> () -> {
-            /* insert your processing code here */
+        (currentExpression, startOffset) -> {
+            /* insert your async processing code here */
             
-            applier.accept(/* insert list of suggestion here */)
+            return /* insert list of suggestion here */;
         }
 ))
 ```
