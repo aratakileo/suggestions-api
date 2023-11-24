@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class SuggestionsAPI implements ClientModInitializer {
@@ -65,7 +66,10 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     public static @Nullable Suggestion getSuggestion(@NotNull String suggestionText) {
         return suggestions.containsKey(suggestionText)
-                ? suggestions.get(suggestionText) : dynamicSuggestions.get(suggestionText);
+                ? suggestions.get(suggestionText)
+                : Objects.nonNull(dynamicSuggestions)
+                        ? dynamicSuggestions.get(suggestionText)
+                        : null;
     }
 
     public static void registerSuggestionsInjector(@NotNull Injector injector) {
