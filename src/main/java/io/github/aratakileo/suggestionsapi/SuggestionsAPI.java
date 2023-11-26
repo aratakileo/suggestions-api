@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 public class SuggestionsAPI implements ClientModInitializer {
     private final static HashMap<String, Suggestion> suggestions = new HashMap<>();
     private final static ArrayList<Injector> injectors = new ArrayList<>();
-    private final static ArrayList<Supplier<@NotNull List<Suggestion>>> resourceDependedInjectors = new ArrayList<>();
+    private final static ArrayList<Supplier<@NotNull List<Suggestion>>> resourceDependedSuggestionContainers = new ArrayList<>();
 
     private static HashMap<String, Suggestion> dynamicSuggestions;
     private static boolean areResourcesLoaded = false;
@@ -41,10 +41,10 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                         areResourcesLoaded = true;
 
-                        resourceDependedInjectors.forEach(
-                                injector -> injector.get().forEach(SuggestionsAPI::addSuggestion)
+                        resourceDependedSuggestionContainers.forEach(
+                                container -> container.get().forEach(SuggestionsAPI::addSuggestion)
                         );
-                        resourceDependedInjectors.clear();
+                        resourceDependedSuggestionContainers.clear();
                     }
                 }
         );
@@ -52,6 +52,15 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     public static void addSuggestion(@NotNull Suggestion suggestion) {
         suggestions.put(suggestion.getSuggestionText(), suggestion);
+    }
+
+    public static void addResourceDependedSuggestionsContainer(@NotNull Supplier<@NotNull List<Suggestion>> container) {
+        if (areResourcesLoaded) {
+            container.get().forEach(SuggestionsAPI::addSuggestion);
+            return;
+        }
+
+        resourceDependedSuggestionContainers.add(container);
     }
 
     public static void removeSuggestion(@NotNull Suggestion suggestion) {
@@ -74,15 +83,6 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     public static void registerSuggestionsInjector(@NotNull Injector injector) {
         injectors.add(injector);
-    }
-
-    public static void registerResourceDependedInjector(@NotNull Supplier<@NotNull List<Suggestion>> injector) {
-        if (areResourcesLoaded) {
-            injector.get().forEach(SuggestionsAPI::addSuggestion);
-            return;
-        }
-
-        resourceDependedInjectors.add(injector);
     }
 
     public static @NotNull SuggestionsProcessor.Builder getSuggestionProcessorBuilder() {

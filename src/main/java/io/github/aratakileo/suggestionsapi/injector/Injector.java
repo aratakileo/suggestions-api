@@ -15,14 +15,14 @@ public interface Injector {
     }
 
     default boolean isIsolated() {
-        return false;
+        return true;
     }
 
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter
     ) {
-        return simple(pattern, uncheckedSuggestionsGetter, false);
+        return simple(pattern, uncheckedSuggestionsGetter, true);
     }
 
     static @NotNull SuggestionsInjector simple(
@@ -65,7 +65,7 @@ public interface Injector {
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter
     ) {
-        return async(pattern, uncheckedSupplierGetter, false);
+        return async(pattern, uncheckedSupplierGetter, true);
     }
 
     static @NotNull AsyncInjector async(
