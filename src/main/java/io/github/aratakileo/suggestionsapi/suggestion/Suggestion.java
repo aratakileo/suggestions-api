@@ -13,7 +13,7 @@ public interface Suggestion {
     String getSuggestionText();
 
     default boolean shouldShowFor(@NotNull String currentExpression) {
-        return getSuggestionText().toLowerCase().startsWith(currentExpression.toLowerCase());
+        return DEFAULT_CONDITION.apply(getSuggestionText(), currentExpression);
     }
 
     @NotNull

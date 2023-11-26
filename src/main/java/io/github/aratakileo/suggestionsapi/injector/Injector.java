@@ -10,25 +10,27 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public interface Injector {
+    Pattern SIMPLE_WORD_PATTERN = Pattern.compile("[A-Za-z0-9]+");
+
     default int getStartOffset() {
         return 0;
     }
 
-    default boolean isIsolated() {
-        return true;
+    default boolean isNestable() {
+        return false;
     }
 
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter
     ) {
-        return simple(pattern, uncheckedSuggestionsGetter, true);
+        return simple(pattern, uncheckedSuggestionsGetter, false);
     }
 
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter,
-            boolean isIsolated
+            boolean isNestable
     ) {
         return new SuggestionsInjector() {
             private int startOffset = 0;
@@ -51,8 +53,8 @@ public interface Injector {
             }
 
             @Override
-            public boolean isIsolated() {
-                return isIsolated;
+            public boolean isNestable() {
+                return isNestable;
             }
         };
     }
@@ -65,7 +67,7 @@ public interface Injector {
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter
     ) {
-        return async(pattern, uncheckedSupplierGetter, true);
+        return async(pattern, uncheckedSupplierGetter, false);
     }
 
     static @NotNull AsyncInjector async(
@@ -75,7 +77,7 @@ public interface Injector {
                     @NotNull Integer,
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter,
-            boolean isIsolated
+            boolean isNestable
     ) {
         return new AsyncInjector() {
             private int startOffset = 0;
@@ -101,8 +103,8 @@ public interface Injector {
             }
 
             @Override
-            public boolean isIsolated() {
-                return isIsolated;
+            public boolean isNestable() {
+                return isNestable;
             }
         };
     }

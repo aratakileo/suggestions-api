@@ -135,7 +135,7 @@ public class SuggestionsProcessor {
         for (final var injectorEntry: suggestionsInjectorsBuffer.entrySet()) {
             final var injector = injectorEntry.getKey();
 
-            if (minOffset != -1 && injector.isIsolated() && injector.getStartOffset() > minOffset) continue;
+            if (minOffset != -1 && !injector.isNestable() && injector.getStartOffset() > minOffset) continue;
 
             for (final var suggestion: injectorEntry.getValue()) {
                 final var offset = injector.getStartOffset();
@@ -169,7 +169,7 @@ public class SuggestionsProcessor {
         for (final var injectorEntry: asyncInjectorsBuffer.entrySet()) {
             final var injector = injectorEntry.getKey();
 
-            if (minOffset != -1 && injector.isIsolated() && injector.getStartOffset() > minOffset) continue;
+            if (minOffset != -1 && !injector.isNestable() && injector.getStartOffset() > minOffset) continue;
 
             hasUsedAsyncInjector = true;
 
