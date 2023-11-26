@@ -106,13 +106,13 @@ SuggestionsAPI.registerInjector(Injector.simple(
 ))
 ```
 
-By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `false` as the third (last) argument. For example:
+By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `true` as the third (last) argument. For example:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]"),
         (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList(),
-        false
+        true
 ))
 ```
 
