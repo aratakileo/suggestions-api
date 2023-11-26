@@ -83,9 +83,9 @@ To add your own suggestion use method `SuggestionsAPI.addSuggsetion(...)`:
 SuggestionsAPI.addSuggestion(simpleSuggestion);
 ```
 
-If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.registerResourceDependedInjector(...)` to avoid game crash:
+If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.addResourceDependedSuggestionsContainer(...)` to avoid game crash:
 ```java
-SuggestionsAPI.registerResourceDependedInjector(
+SuggestionsAPI.addResourceDependedSuggestionsContainer(
         () -> List.of(Suggestion.withIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")))
 );
 ```
@@ -106,13 +106,13 @@ SuggestionsAPI.registerInjector(Injector.simple(
 ))
 ```
 
-If you need these suggestions not to be offered if the found pattern is included in the found pattern of another injector, and is not similar to it in terms of the number of characters found, then you must specify `true` as the last argument. For example:
+By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `false` as the third (last) argument. For example:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]"),
         (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList(),
-        true
+        false
 ))
 ```
 
