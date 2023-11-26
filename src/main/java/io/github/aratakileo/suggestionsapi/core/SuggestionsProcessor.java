@@ -28,13 +28,13 @@ public class SuggestionsProcessor {
     private final int wordStart;
     private final HashMap<String, Suggestion> suggestions;
     private final ArrayList<Injector> injectors;
-    private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
+    private final Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer;
     private final BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier;
 
     private SuggestionsProcessor(
             @NotNull HashMap<String, Suggestion> suggestions,
             @NotNull ArrayList<Injector> injectors,
-            @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer,
+            @NotNull Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer,
             @NotNull BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier,
             @NotNull String textUptoCursor,
             int wordStart
@@ -42,7 +42,7 @@ public class SuggestionsProcessor {
         this.textUptoCursor = textUptoCursor;
         this.suggestions = suggestions;
         this.injectors = injectors;
-        this.dynamicSuggestionsConsumer = dynamicSuggestionsConsumer;
+        this.tempSuggestionsConsumer = tempSuggestionsConsumer;
         this.newSuggestionsApplier = newSuggestionsApplier;
         this.wordStart = wordStart;
     }
@@ -130,7 +130,7 @@ public class SuggestionsProcessor {
 
         final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
 
-        var dynamicSuggestions = new HashMap<String, Suggestion>();
+        var tempSuggestions = new HashMap<String, Suggestion>();
 
         for (final var injectorEntry: suggestionsInjectorsBuffer.entrySet()) {
             final var injector = injectorEntry.getKey();
@@ -150,11 +150,11 @@ public class SuggestionsProcessor {
                         suggestion.getSuggestionText()
                 ));
 
-                dynamicSuggestions.put(suggestion.getSuggestionText(), suggestion);
+                tempSuggestions.put(suggestion.getSuggestionText(), suggestion);
             }
         }
 
-        dynamicSuggestionsConsumer.accept(dynamicSuggestions);
+        tempSuggestionsConsumer.accept(tempSuggestions);
 
         suggestions.forEach((suggestionText, suggestion) -> {
             if (suggestion.shouldShowFor(currentExpression))
@@ -195,7 +195,7 @@ public class SuggestionsProcessor {
     public static @Nullable SuggestionsProcessor from(
             @NotNull HashMap<String, Suggestion> suggestions,
             @NotNull ArrayList<Injector> injectors,
-            @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer,
+            @NotNull Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer,
             @NotNull BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier,
             @NotNull String textUptoCursor
     ) {
@@ -212,7 +212,7 @@ public class SuggestionsProcessor {
         return new SuggestionsProcessor(
                 suggestions,
                 injectors,
-                dynamicSuggestionsConsumer,
+                tempSuggestionsConsumer,
                 newSuggestionsApplier,
                 textUptoCursor,
                 wordStart
@@ -222,7 +222,7 @@ public class SuggestionsProcessor {
     public static class Builder {
         private final HashMap<String, Suggestion> suggestions;
         private final ArrayList<Injector> injectors;
-        private final Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer;
+        private final Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer;
 
         private String textUptoCursor;
         private BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier;
@@ -230,11 +230,11 @@ public class SuggestionsProcessor {
         public Builder(
                 @NotNull HashMap<String, Suggestion> suggestions,
                 @NotNull ArrayList<Injector> injectors,
-                @NotNull Consumer<HashMap<String, Suggestion>> dynamicSuggestionsConsumer
+                @NotNull Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer
         ) {
             this.suggestions = suggestions;
             this.injectors = injectors;
-            this.dynamicSuggestionsConsumer = dynamicSuggestionsConsumer;
+            this.tempSuggestionsConsumer = tempSuggestionsConsumer;
         }
 
         public Builder setOtherValues(
@@ -250,7 +250,7 @@ public class SuggestionsProcessor {
             return SuggestionsProcessor.from(
                     suggestions,
                     injectors,
-                    dynamicSuggestionsConsumer,
+                    tempSuggestionsConsumer,
                     newSuggestionsApplier,
                     textUptoCursor
             );

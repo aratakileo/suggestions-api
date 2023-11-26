@@ -23,7 +23,7 @@ public class SuggestionsAPI implements ClientModInitializer {
     private final static ArrayList<Injector> injectors = new ArrayList<>();
     private final static ArrayList<Supplier<@NotNull List<Suggestion>>> resourceDependedSuggestionContainers = new ArrayList<>();
 
-    private static HashMap<String, Suggestion> dynamicSuggestions;
+    private static HashMap<String, Suggestion> tempSuggestions;
     private static boolean areResourcesLoaded = false;
 
     @Override
@@ -76,8 +76,8 @@ public class SuggestionsAPI implements ClientModInitializer {
     public static @Nullable Suggestion getSuggestion(@NotNull String suggestionText) {
         return suggestions.containsKey(suggestionText)
                 ? suggestions.get(suggestionText)
-                : Objects.nonNull(dynamicSuggestions)
-                        ? dynamicSuggestions.get(suggestionText)
+                : Objects.nonNull(tempSuggestions)
+                        ? tempSuggestions.get(suggestionText)
                         : null;
     }
 
@@ -89,7 +89,7 @@ public class SuggestionsAPI implements ClientModInitializer {
         return new SuggestionsProcessor.Builder(
                 suggestions,
                 injectors,
-                newDynamicSuggestions -> dynamicSuggestions = newDynamicSuggestions
+                newTempSuggestions -> tempSuggestions = newTempSuggestions
         );
     }
 }
