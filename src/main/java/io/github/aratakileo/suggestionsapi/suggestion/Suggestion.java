@@ -49,14 +49,16 @@ public interface Suggestion {
             @NotNull String suggestionText,
             @NotNull ResourceLocation icon
     ) {
-        try {
-            final var resource = Minecraft.getInstance().getResourceManager().getResource(icon).get();
-            final var nativeImage = NativeImage.read(resource.open());
+        return IconSuggestion.usingIconSize(suggestionText, icon);
+    }
 
-            return new IconSuggestion(suggestionText, icon, nativeImage.getWidth(), nativeImage.getHeight());
-        } catch (IOException ignore) {}
-
-        return null;
+    @Nullable
+    static IconSuggestion withIcon(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon,
+            boolean isIconOnLeft
+    ) {
+        return IconSuggestion.usingIconSize(suggestionText, icon, isIconOnLeft);
     }
 
     @Nullable
@@ -65,11 +67,27 @@ public interface Suggestion {
             @NotNull ResourceLocation icon,
             @NotNull BiFunction<@NotNull String, @NotNull String, @NotNull Boolean> showCondition
     ) {
+        return withIcon(suggestionText, icon, showCondition, true);
+    }
+
+    @Nullable
+    static IconSuggestion withIcon(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon,
+            @NotNull BiFunction<@NotNull String, @NotNull String, @NotNull Boolean> showCondition,
+            boolean isIconOnLeft
+    ) {
         try {
             final var resource = Minecraft.getInstance().getResourceManager().getResource(icon).get();
             final var nativeImage = NativeImage.read(resource.open());
 
-            return new IconSuggestion(suggestionText, icon, nativeImage.getWidth(), nativeImage.getHeight()) {
+            return new IconSuggestion(
+                    suggestionText,
+                    icon,
+                    nativeImage.getWidth(),
+                    nativeImage.getHeight(),
+                    isIconOnLeft
+            ) {
                 @Override
                 public boolean shouldShowFor(@NotNull String currentExpression) {
                     return showCondition.apply(getSuggestionText(), currentExpression);
@@ -86,6 +104,15 @@ public interface Suggestion {
             @NotNull ResourceLocation icon
     ) {
         return withIcon(suggestionText, icon, ALWAYS_SHOW_CONDITION);
+    }
+
+    @Nullable
+    static IconSuggestion alwaysShownWithIcon(
+            @NotNull String suggestionText,
+            @NotNull ResourceLocation icon,
+            boolean isIconOnLeft
+    ) {
+        return withIcon(suggestionText, icon, ALWAYS_SHOW_CONDITION, isIconOnLeft);
     }
 
     BiFunction<
