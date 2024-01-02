@@ -3,8 +3,13 @@ package io.github.aratakileo.suggestionsapi.mixin;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
+import io.github.aratakileo.suggestionsapi.injector.Injector;
+import io.github.aratakileo.suggestionsapi.injector.InjectorListener;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,6 +31,25 @@ public abstract class CommandSuggestionsMixin {
 
     @Shadow @Final
     private boolean commandsOnly;
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    public void init(
+            Minecraft minecraft,
+            Screen screen,
+            EditBox editBox,
+            Font font,
+            boolean bl,
+            boolean bl2,
+            int i,
+            int j,
+            boolean bl3,
+            int k,
+            CallbackInfo ci
+    ) {
+        for (Injector injector: SuggestionsAPI.getInjectors())
+            if (injector instanceof InjectorListener injectorListener)
+                injectorListener.onSessionInited();
+    }
 
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
     private void updateCommandInfo(CallbackInfo ci){
