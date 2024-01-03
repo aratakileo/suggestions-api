@@ -16,8 +16,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
     protected final String suggestionText;
     private final ResourceLocation iconResource;
     private final int iconWidth, iconHeight;
-
-    private boolean isIconOnLeft;
+    private final boolean isIconOnLeft;
 
     public IconSuggestion(
             @NotNull String suggestionText,
@@ -82,10 +81,6 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
 
     public boolean isIconOnLeft() {
         return isIconOnLeft;
-    }
-
-    public void setIconOnLeft(boolean iconOnLeft) {
-        isIconOnLeft = iconOnLeft;
     }
 
     public static IconSuggestion usingIconSize(
