@@ -57,7 +57,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
         RenderUtil.renderFittedCenterTexture(
                 guiGraphics,
                 iconResource,
-                x + (isIconOnLeft ? 1 : Minecraft.getInstance().font.width(suggestionText) + 3),
+                x + (isIconOnLeft() ? 1 : Minecraft.getInstance().font.width(suggestionText) + 3),
                 y,
                 iconWidth,
                 iconHeight,
@@ -68,7 +68,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
         return guiGraphics.drawString(
                 font,
                 suggestionText,
-                x + (isIconOnLeft ? RENDER_ICON_SIZE + 3 : 1),
+                x + (isIconOnLeft() ? RENDER_ICON_SIZE + 3 : 1),
                 y,
                 color
         );

@@ -68,7 +68,7 @@ public class SuggestionsProcessor {
 
                 final var suggestions = suggestionsInjector.getSuggestions(currentExpression);
 
-                if (suggestions != null && !suggestions.isEmpty()) {
+                if (Objects.nonNull(suggestions) && !suggestions.isEmpty()) {
                     suggestionsInjectorsBuffer.put(suggestionsInjector, suggestions);
 
                     if (injector instanceof InjectorListener injectorListener)
@@ -83,11 +83,11 @@ public class SuggestionsProcessor {
 
                 final var asyncApplier = asyncInjector.getAsyncApplier(currentExpression);
 
-                if (asyncApplier != null) {
+                if (Objects.nonNull(asyncApplier)) {
                     asyncInjectorsBuffer.put(asyncInjector, () -> {
                         final var suggestionList = asyncApplier.get();
 
-                        if (suggestionList == null || suggestionList.isEmpty()) {
+                        if (Objects.isNull(suggestionList) || suggestionList.isEmpty()) {
                             asyncProcessors.remove(asyncInjector);
                             return;
                         }
@@ -217,6 +217,11 @@ public class SuggestionsProcessor {
                 injectorListenerEntry.getKey().onSuggestionSelected(suggestion);
                 break;
             }
+    }
+
+    public void initSession() {
+        for (final var injector: injectors)
+            if (injector instanceof InjectorListener injectorListener) injectorListener.onSessionInited();
     }
 
     public static SuggestionsProcessor getInstance() {

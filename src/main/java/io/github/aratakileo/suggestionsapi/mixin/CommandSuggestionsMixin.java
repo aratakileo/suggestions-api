@@ -3,8 +3,7 @@ package io.github.aratakileo.suggestionsapi.mixin;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
-import io.github.aratakileo.suggestionsapi.injector.Injector;
-import io.github.aratakileo.suggestionsapi.injector.InjectorListener;
+import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;
@@ -18,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -46,9 +46,7 @@ public abstract class CommandSuggestionsMixin {
             int k,
             CallbackInfo ci
     ) {
-        for (Injector injector: SuggestionsAPI.getInjectors())
-            if (injector instanceof InjectorListener injectorListener)
-                injectorListener.onSessionInited();
+        SuggestionsProcessor.getInstance().initSession();
     }
 
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
@@ -67,7 +65,7 @@ public abstract class CommandSuggestionsMixin {
                 .setOtherValues(
                         contentText.substring(0, cursorPosition),
                         (textUpToCursor, suggestionList) -> {
-                            if (pendingSuggestions != null) {
+                            if (Objects.nonNull(pendingSuggestions)) {
                                 suggestionList = Stream.concat(
                                         pendingSuggestions.join().getList().stream(),
                                         suggestionList.stream()
@@ -86,7 +84,7 @@ public abstract class CommandSuggestionsMixin {
                         }
                 ).build();
 
-        if (suggestionProcessor == null || !suggestionProcessor.process()) return;
+        if (Objects.isNull(suggestionProcessor) || !suggestionProcessor.process()) return;
 
         ci.cancel();
     }

@@ -51,9 +51,8 @@ public class SuggestionsListMixin {
             io.github.aratakileo.suggestionsapi.suggestion.Suggestion suggestion;
 
             if (
-                    (
-                            suggestion = SuggestionsAPI.getSuggestion(mojangSuggestion.getText())
-                    ) != null && suggestion instanceof SuggestionRenderer
+                    Objects.nonNull(suggestion = SuggestionsAPI.getSuggestion(mojangSuggestion.getText()))
+                            && suggestion instanceof SuggestionRenderer
             ) {
                 rect.setWidth(Math.max(
                         rect.getWidth(),
@@ -67,9 +66,8 @@ public class SuggestionsListMixin {
     private int updateCommandInfo(GuiGraphics instance, Font font, String suggestionText, int x, int y, int color){
         io.github.aratakileo.suggestionsapi.suggestion.Suggestion suggestion;
         if (
-                (
-                        suggestion = SuggestionsAPI.getSuggestion(suggestionText)
-                ) == null || !(suggestion instanceof SuggestionRenderer)
+                Objects.isNull(suggestion = SuggestionsAPI.getSuggestion(suggestionText))
+                        || !(suggestion instanceof SuggestionRenderer)
         ) return instance.drawString(font, suggestionText, x, y, color);
 
         return ((SuggestionRenderer) suggestion).renderContent(instance, font, x, y, color);
