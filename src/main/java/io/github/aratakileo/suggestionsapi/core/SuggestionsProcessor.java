@@ -219,11 +219,6 @@ public class SuggestionsProcessor {
             }
     }
 
-    public void initSession() {
-        for (final var injector: injectors)
-            if (injector instanceof InjectorListener injectorListener) injectorListener.onSessionInited();
-    }
-
     public static SuggestionsProcessor getInstance() {
         return instance;
     }

@@ -1,8 +1,10 @@
 package io.github.aratakileo.suggestionsapi;
 
 import io.github.aratakileo.suggestionsapi.injector.Injector;
+import io.github.aratakileo.suggestionsapi.injector.InjectorListener;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
+import io.github.aratakileo.suggestionsapi.util.Cast;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -83,6 +85,11 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     public static void registerSuggestionsInjector(@NotNull Injector injector) {
         injectors.add(injector);
+    }
+
+    public static void initSession() {
+        for (final var injector: injectors)
+            if (injector instanceof InjectorListener injectorListener) injectorListener.onSessionInited();
     }
 
     public static @NotNull SuggestionsProcessor.Builder getSuggestionProcessorBuilder() {

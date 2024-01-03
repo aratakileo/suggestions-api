@@ -3,7 +3,6 @@ package io.github.aratakileo.suggestionsapi.mixin;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
-import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;
@@ -46,7 +45,7 @@ public abstract class CommandSuggestionsMixin {
             int k,
             CallbackInfo ci
     ) {
-        SuggestionsProcessor.getInstance().initSession();
+        SuggestionsAPI.initSession();
     }
 
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
