@@ -10,7 +10,11 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public interface Injector {
-    Pattern SIMPLE_WORD_PATTERN = Pattern.compile("[A-Za-z0-9]+");
+    Pattern
+            SIMPLE_WORD_PATTERN = Pattern.compile("[A-Za-z0-9]+$"),
+            IDENTIFIER_PATTERN = Pattern.compile("[A-Za-z0-9_]+$"),
+            NAMESPACABLE_IDENTIFIER_PATTERN = Pattern.compile("([A-Za-z0-9_]+:)?[A-Za-z0-9_]+$"),
+            ANYTHING_WITHOUT_SPACES_PATTERN = Pattern.compile("\\S+$");
 
     default int getStartOffset() {
         return 0;
@@ -37,14 +41,13 @@ public interface Injector {
 
             @Override
             public @Nullable List<Suggestion> getSuggestions(@NotNull String currentExpression) {
-                final var lastMatchedStart = getLastMatchedStart(pattern, currentExpression);
+                final var matcher = pattern.matcher(currentExpression);
 
-                if (lastMatchedStart == -1)
-                    return null;
+                if (!matcher.find()) return null;
 
-                startOffset = lastMatchedStart;
+                startOffset = matcher.start();
 
-                return uncheckedSuggestionsGetter.apply(currentExpression, lastMatchedStart);
+                return uncheckedSuggestionsGetter.apply(currentExpression, startOffset);
             }
 
             @Override
@@ -87,14 +90,13 @@ public interface Injector {
             public Supplier<@Nullable List<Suggestion>> getAsyncApplier(
                     @NotNull String currentExpression
             ) {
-                final var lastMatchedStart = getLastMatchedStart(pattern, currentExpression);
+                final var matcher = pattern.matcher(currentExpression);
 
-                if (lastMatchedStart == -1)
-                    return null;
+                if (!matcher.find()) return null;
 
-                startOffset = lastMatchedStart;
+                startOffset = matcher.start();
 
-                return () -> uncheckedSupplierGetter.apply(currentExpression, lastMatchedStart);
+                return () -> uncheckedSupplierGetter.apply(currentExpression, startOffset);
             }
 
             @Override
@@ -107,24 +109,5 @@ public interface Injector {
                 return isNestable;
             }
         };
-    }
-
-    static int getLastMatchedStart(
-            @NotNull Pattern pattern,
-            @NotNull String currentExpression
-    ) {
-        final var matcher = pattern.matcher(currentExpression);
-
-        if (!matcher.find()) return -1;
-
-        var start = matcher.start();
-        var end = matcher.end();
-
-        while (matcher.find()) {
-            start = matcher.start();
-            end = matcher.end();
-        }
-
-        return end != currentExpression.length() ? -1 : start;
     }
 }

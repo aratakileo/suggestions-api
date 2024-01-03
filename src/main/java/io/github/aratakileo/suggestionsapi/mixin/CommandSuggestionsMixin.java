@@ -45,7 +45,7 @@ public abstract class CommandSuggestionsMixin {
             int k,
             CallbackInfo ci
     ) {
-        SuggestionsAPI.initSession();
+        SuggestionsAPI.InjectorProcessor.initSession();
     }
 
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
@@ -60,30 +60,27 @@ public abstract class CommandSuggestionsMixin {
 
         if (commandsOnly || hasSlash) return;
 
-        final var suggestionProcessor = SuggestionsAPI.getSuggestionProcessorBuilder()
-                .setOtherValues(
-                        contentText.substring(0, cursorPosition),
-                        (textUpToCursor, suggestionList) -> {
-                            if (Objects.nonNull(pendingSuggestions)) {
-                                suggestionList = Stream.concat(
-                                        pendingSuggestions.join().getList().stream(),
-                                        suggestionList.stream()
-                                ).toList();
-                            }
+        final var injectorProcessor = SuggestionsAPI.getInjectorProcessor();
+        injectorProcessor.setNewSuggestionsApplier((textUpToCursor, suggestionList) -> {
+            if (Objects.nonNull(pendingSuggestions)) {
+                suggestionList = Stream.concat(
+                        pendingSuggestions.join().getList().stream(),
+                        suggestionList.stream()
+                ).toList();
+            }
 
-                            pendingSuggestions = CompletableFuture.completedFuture(Suggestions.create(
-                                    textUpToCursor,
-                                    suggestionList
-                            ));
+            pendingSuggestions = CompletableFuture.completedFuture(Suggestions.create(
+                    textUpToCursor,
+                    suggestionList
+            ));
 
-                            pendingSuggestions.thenRun(() -> {
-                                if (pendingSuggestions.isDone())
-                                    ((CommandSuggestions) (Object) this).showSuggestions(false);
-                            });
-                        }
-                ).build();
+            pendingSuggestions.thenRun(() -> {
+                if (pendingSuggestions.isDone())
+                    ((CommandSuggestions) (Object) this).showSuggestions(false);
+            });
+        });
 
-        if (Objects.isNull(suggestionProcessor) || !suggestionProcessor.process()) return;
+        if (injectorProcessor.process(contentText.substring(0, cursorPosition))) return;
 
         ci.cancel();
     }

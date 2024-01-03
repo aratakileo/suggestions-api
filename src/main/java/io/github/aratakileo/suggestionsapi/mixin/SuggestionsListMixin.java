@@ -2,7 +2,6 @@ package io.github.aratakileo.suggestionsapi.mixin;
 
 import com.mojang.brigadier.suggestion.Suggestion;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
-import io.github.aratakileo.suggestionsapi.core.SuggestionsProcessor;
 import io.github.aratakileo.suggestionsapi.suggestion.SuggestionRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,9 +31,7 @@ public class SuggestionsListMixin {
 
     @Inject(method = "useSuggestion", at = @At("HEAD"))
     private void useSuggestion(CallbackInfo ci) {
-        if (Objects.isNull(SuggestionsProcessor.getInstance())) return;
-
-        SuggestionsProcessor.getInstance().selectSuggestion(suggestionList.get(current).getText());
+        SuggestionsAPI.InjectorProcessor.selectSuggestion(suggestionList.get(current).getText());
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
