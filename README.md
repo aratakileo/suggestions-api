@@ -101,7 +101,7 @@ To create a simple injector, there is a function `Injector.simple(...)`. As the 
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile(":[A-Za-z0-9]+:$"),
+        Pattern.compile(":[A-Za-z0-9]*(:)?$"),
         (currentExpression, startOffset) -> Stream.of(
             "67487",
             "nothing",
