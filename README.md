@@ -83,9 +83,9 @@ To add your own suggestion use method `SuggestionsAPI.addSuggsetion(...)`:
 SuggestionsAPI.addSuggestion(simpleSuggestion);
 ```
 
-If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.addResourceDependedSuggestionsContainer(...)` to avoid game crash:
+If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.addResourceDependedContainer(...)` to avoid game crash:
 ```java
-SuggestionsAPI.addResourceDependedSuggestionsContainer(
+SuggestionsAPI.addResourceDependedContainer(
         () -> List.of(Suggestion.withIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")))
 );
 ```
@@ -101,19 +101,76 @@ To create a simple injector, there is a function `Injector.simple(...)`. As the 
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile("[0-9]"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList()
-))
+        Pattern.compile(":[A-Za-z0-9]+:$"),
+        (currentExpression, startOffset) -> Stream.of(
+            "67487",
+            "nothing",
+            "bedrock",
+            "bedrock_2"
+        ).map(value -> Suggestion.simple(':' + value + ':')).toList()
+));
+```
+
+or
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[A-Za-z0-9]+$"),
+        (currentExpression, startOffset) -> Stream.of(
+            "Hi, " + currentExpression.substring(startOffset) + '!',
+            '"' + currentExpression.substring(startOffset) + '"'
+        ).map(Suggestion::alwaysShown).toList()
+));
+```
+
+or
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile(":[0-9]+:$"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList()
+));
+
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[0-9]$"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList()
+));
 ```
 
 By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `true` as the third (last) argument. For example:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile("[0-9]"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9).boxed().map(Objects::toString).map(Suggestion::alwaysShown).toList(),
+        Pattern.compile(":[0-9]+:$"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList(),
         true
-))
+));
+
+
+// The suggestions of this injector will not appear if the suggestions from the injector above appear, 
+// because the interaction string of this injector is included in the interaction string of the injector above
+
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[0-9]$"),
+        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList(),
+        true
+));
 ```
 
 If you need the suggestions to appear synchronously, you can use the function `Injector.async(...)` to initialize the asynchronous injector. The injector initialized with this function provides a mechanism for canceling the current asynchronous process if a request for a new one has been received, and the current process has not had time to complete by this time. This function is similar to the previous one, but this time the second argument, namely lambda, returns a lambda without arguments, which will be launched as an asynchronous process, and has three arguments, the last of which is a lambda that accepts a list of new suggestions and should be used inside the lambda of an asynchronous process. For example:
@@ -126,7 +183,7 @@ SuggestionsAPI.registerInjector(Injector.async(
             
             return /* insert list of suggestion here */;
         }
-))
+));
 ```
 
 Just as in the case of the previous function, a third argument can be specified in this function.
