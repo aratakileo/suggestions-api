@@ -127,7 +127,7 @@ or
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile(":[0-9]+:$"),
+        Pattern.compile(":[0-9]*(:)?$"),
         (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
@@ -149,7 +149,7 @@ By default, if detected string according to the regex pattern of the injector is
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile(":[0-9]+:$"),
+        Pattern.compile(":[0-9]*(:)?$"),
         (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
