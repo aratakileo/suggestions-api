@@ -1,8 +1,10 @@
 package io.github.aratakileo.suggestionsapi.core;
 
 import com.mojang.brigadier.context.StringRange;
+import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
 import io.github.aratakileo.suggestionsapi.injector.AsyncInjector;
 import io.github.aratakileo.suggestionsapi.injector.Injector;
+import io.github.aratakileo.suggestionsapi.injector.InjectorListener;
 import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import io.github.aratakileo.suggestionsapi.injector.SuggestionsInjector;
 import org.jetbrains.annotations.NotNull;
@@ -10,10 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -24,12 +23,16 @@ public class SuggestionsProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsProcessor.class);
     private static final HashMap<AsyncInjector, CompletableFuture<Void>> asyncProcessors = new HashMap<>();
 
+    private static SuggestionsProcessor instance = null;
+
     private final String textUptoCursor;
     private final int wordStart;
     private final HashMap<String, Suggestion> suggestions;
     private final ArrayList<Injector> injectors;
     private final Consumer<HashMap<String, Suggestion>> tempSuggestionsConsumer;
     private final BiConsumer<String, List<com.mojang.brigadier.suggestion.Suggestion>> newSuggestionsApplier;
+
+    private HashMap<InjectorListener, List<Suggestion>> usedInjectorListeners = new HashMap<>();
 
     private SuggestionsProcessor(
             @NotNull HashMap<String, Suggestion> suggestions,
@@ -45,6 +48,8 @@ public class SuggestionsProcessor {
         this.tempSuggestionsConsumer = tempSuggestionsConsumer;
         this.newSuggestionsApplier = newSuggestionsApplier;
         this.wordStart = wordStart;
+
+        instance = this;
     }
 
     public boolean process() {
@@ -65,6 +70,10 @@ public class SuggestionsProcessor {
 
                 if (suggestions != null && !suggestions.isEmpty()) {
                     suggestionsInjectorsBuffer.put(suggestionsInjector, suggestions);
+
+                    if (injector instanceof InjectorListener injectorListener)
+                        usedInjectorListeners.put(injectorListener, suggestions);
+
                     isActiveInjector = true;
                 }
             }
@@ -100,6 +109,12 @@ public class SuggestionsProcessor {
                         }
 
                         newSuggestionsApplier.accept(textUptoCursor, mojangSuggestions);
+
+                        if (injector instanceof InjectorListener injectorListener) {
+                            if (usedInjectorListeners.containsKey(injectorListener))
+                                usedInjectorListeners.get(injectorListener).addAll(suggestionList);
+                            else usedInjectorListeners.put(injectorListener, suggestionList);
+                        }
                     });
 
                     isActiveInjector = true;
@@ -190,6 +205,22 @@ public class SuggestionsProcessor {
         newSuggestionsApplier.accept(textUptoCursor, applicableMojangSuggestions);
 
         return true;
+    }
+
+    public void selectSuggestion(@NotNull String suggestionText) {
+        final var suggestion = SuggestionsAPI.getSuggestion(suggestionText);
+
+        if (Objects.isNull(suggestion)) return;
+
+        for (final var injectorListenerEntry: usedInjectorListeners.entrySet())
+            if (injectorListenerEntry.getValue().contains(suggestion)) {
+                injectorListenerEntry.getKey().onSuggestionSelected(suggestion);
+                break;
+            }
+    }
+
+    public static SuggestionsProcessor getInstance() {
+        return instance;
     }
 
     public static @Nullable SuggestionsProcessor from(

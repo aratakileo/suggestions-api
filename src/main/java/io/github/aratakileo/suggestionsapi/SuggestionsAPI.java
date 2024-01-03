@@ -86,7 +86,6 @@ public class SuggestionsAPI implements ClientModInitializer {
         injectors.add(injector);
     }
 
-
     public static ArrayList<Injector> getInjectors() {
         return Cast.unsafeOf(injectors.clone());
     }
