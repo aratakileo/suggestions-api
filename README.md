@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.1"
+    modImplementation "maven.modrinth:suggestions-api:1.0.3"
 }
 ```
 </details>
@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.1")
+    modImplementation("maven.modrinth", "suggestions-api", "1.0.3")
 }
 ```
 </details>
