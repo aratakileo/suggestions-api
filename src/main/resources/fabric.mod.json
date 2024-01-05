@@ -24,8 +24,6 @@
     "suggestionsapi.mixins.json"
   ],
   "depends": {
-    "fabricloader": "*",
-    "minecraft": "*",
     "fabric-api": "*"
   },
   "custom": {
