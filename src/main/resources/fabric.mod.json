@@ -23,9 +23,6 @@
   "mixins": [
     "suggestionsapi.mixins.json"
   ],
-  "depends": {
-    "fabric-api": "*"
-  },
   "custom": {
     "modmenu": {
       "badges": [
