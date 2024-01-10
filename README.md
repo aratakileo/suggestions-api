@@ -1,4 +1,6 @@
 # Suggestions API
+![](/preview/preview.png)
+
 This library is injected into the Minecraft source code, which is responsible for the logic of Minecraft suggestions in chat, in order to provide a more convenient wrapper for adding or changing suggestions. Currently, the library contains interfaces for:
 - adding suggestions synchronous/asynchronous based on the text entered by the user in the text input field
 - changing suggestions render
