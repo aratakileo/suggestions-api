@@ -1,5 +1,16 @@
 # Suggestions API
-API for working with Minecraft suggestions. It allows you to add suggestions with the possibility of changing their rendering. Using this library, you can add them both statically and dynamically.
+This library is injected into the Minecraft source code, which is responsible for the logic of Minecraft suggestions in chat, in order to provide a more convenient wrapper for adding or changing suggestions. Currently, the library contains interfaces for:
+- adding suggestions synchronous/asynchronous based on the text entered by the user in the text input field
+- changing suggestions render
+- processing events related to suggestions:
+  - on session inited
+  - on suggestion selected
+
+for which the library provides ready-made implementations in the form of:
+- always shown suggestion (texted suggestion with condition to always show it)
+- simple suggestion (texted suggestion with default or custom showing condition)
+- icon suggestion (texted suggestion with icon on the left or on the right with default or custom showing condition)
+- synchronous/asynchronous suggestions injector (dynamically adding suggestions when entering text into the input field based on matching the specified pattern of regex)
 
 ### Getting started
 Merge the following with your
