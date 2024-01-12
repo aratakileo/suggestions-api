@@ -16,8 +16,8 @@ for which the library provides ready-made implementations in the form of:
 
 ### Which projects use the Suggestions API?
 These projects use the Suggestions API:
-- [emogg](https://modrinth.com/emogg)
-- [JIME](https://modrinth.com/jime)
+- [emogg](https://modrinth.com/mod/emogg)
+- [JIME](https://modrinth.com/mod/jime)
 
 ### Getting started
 Merge the following with your
