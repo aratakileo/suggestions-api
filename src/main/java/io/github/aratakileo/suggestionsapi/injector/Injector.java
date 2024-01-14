@@ -26,28 +26,36 @@ public interface Injector {
 
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
-            BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter
+            BiFunction<
+                    @NotNull StringContainer,
+                    @NotNull Integer,
+                    @Nullable List<Suggestion>
+                    > uncheckedSuggestionsGetter
     ) {
         return simple(pattern, uncheckedSuggestionsGetter, false);
     }
 
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
-            BiFunction<@NotNull String, @NotNull Integer, @Nullable List<Suggestion>> uncheckedSuggestionsGetter,
+            BiFunction<
+                    @NotNull StringContainer,
+                    @NotNull Integer,
+                    @Nullable List<Suggestion>
+                    > uncheckedSuggestionsGetter,
             boolean isNestable
     ) {
         return new SuggestionsInjector() {
             private int startOffset = 0;
 
             @Override
-            public @Nullable List<Suggestion> getSuggestions(@NotNull String currentExpression) {
-                final var matcher = pattern.matcher(currentExpression);
+            public @Nullable List<Suggestion> getSuggestions(@NotNull StringContainer stringContainer) {
+                final var matcher = pattern.matcher(stringContainer.getContent());
 
                 if (!matcher.find()) return null;
 
                 startOffset = matcher.start();
 
-                return uncheckedSuggestionsGetter.apply(currentExpression, startOffset);
+                return uncheckedSuggestionsGetter.apply(stringContainer, startOffset);
             }
 
             @Override
@@ -65,7 +73,7 @@ public interface Injector {
     static @NotNull AsyncInjector async(
             @NotNull Pattern pattern,
             BiFunction<
-                    @NotNull String,
+                    @NotNull StringContainer,
                     @NotNull Integer,
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter
@@ -76,7 +84,7 @@ public interface Injector {
     static @NotNull AsyncInjector async(
             @NotNull Pattern pattern,
             BiFunction<
-                    @NotNull String,
+                    @NotNull StringContainer,
                     @NotNull Integer,
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter,
@@ -88,15 +96,15 @@ public interface Injector {
             @Override
             @Nullable
             public Supplier<@Nullable List<Suggestion>> getAsyncApplier(
-                    @NotNull String currentExpression
+                    @NotNull StringContainer stringContainer
             ) {
-                final var matcher = pattern.matcher(currentExpression);
+                final var matcher = pattern.matcher(stringContainer.getContent());
 
                 if (!matcher.find()) return null;
 
                 startOffset = matcher.start();
 
-                return () -> uncheckedSupplierGetter.apply(currentExpression, startOffset);
+                return () -> uncheckedSupplierGetter.apply(stringContainer, startOffset);
             }
 
             @Override

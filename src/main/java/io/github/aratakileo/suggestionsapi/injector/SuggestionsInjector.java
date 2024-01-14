@@ -7,5 +7,5 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public interface SuggestionsInjector extends Injector {
-    @Nullable List<Suggestion> getSuggestions(@NotNull String currentExpression);
+    @Nullable List<Suggestion> getSuggestions(@NotNull StringContainer stringContainer);
 }

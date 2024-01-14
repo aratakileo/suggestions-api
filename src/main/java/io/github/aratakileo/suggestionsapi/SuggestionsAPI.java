@@ -1,10 +1,7 @@
 package io.github.aratakileo.suggestionsapi;
 
 import com.mojang.brigadier.context.StringRange;
-import io.github.aratakileo.suggestionsapi.injector.AsyncInjector;
-import io.github.aratakileo.suggestionsapi.injector.Injector;
-import io.github.aratakileo.suggestionsapi.injector.InjectorListener;
-import io.github.aratakileo.suggestionsapi.injector.SuggestionsInjector;
+import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -133,13 +130,14 @@ public class SuggestionsAPI implements ClientModInitializer {
             }
         }
 
-        public boolean process(@NotNull String textUpToCursor) {
+        public boolean process(@NotNull StringContainer stringContainer) {
             cachedSuggestions = new HashMap<>();
             injectorsCache = new HashMap<>();
 
             final var asyncInjectorsBuffer = new HashMap<@NotNull AsyncInjector, @NotNull Runnable>();
-            final var minOffset = processInjectors(textUpToCursor, asyncInjectorsBuffer);
+            final var minOffset = processInjectors(stringContainer, asyncInjectorsBuffer);
             final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
+            final var textUpToCursor = stringContainer.getContent();
 
             for (final var injectorEntry: injectorsCache.entrySet()) {
                 if (!(injectorEntry.getKey() instanceof SuggestionsInjector)) continue;
@@ -213,7 +211,7 @@ public class SuggestionsAPI implements ClientModInitializer {
         }
 
         private int processInjectors(
-                @NotNull String textUpToCursor,
+                @NotNull StringContainer stringContainer,
                 @NotNull HashMap<@NotNull AsyncInjector, @NotNull Runnable> asyncInjectorBuffer
         ) {
             var minOffset = -1;
@@ -225,7 +223,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                 if (injector instanceof SuggestionsInjector suggestionsInjector) {
                     isValidInjector = true;
 
-                    final var suggestions = suggestionsInjector.getSuggestions(textUpToCursor);
+                    final var suggestions = suggestionsInjector.getSuggestions(stringContainer);
 
                     if (Objects.nonNull(suggestions) && !suggestions.isEmpty()) {
                         injectorsCache.put(suggestionsInjector, suggestions);
@@ -237,7 +235,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                 if (injector instanceof AsyncInjector asyncInjector) {
                     isValidInjector = true;
 
-                    final var asyncApplier = asyncInjector.getAsyncApplier(textUpToCursor);
+                    final var asyncApplier = asyncInjector.getAsyncApplier(stringContainer);
 
                     if (Objects.nonNull(asyncApplier)) {
                         asyncInjectorBuffer.put(asyncInjector, () -> {
@@ -250,6 +248,7 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                             final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
                             final var offset = injector.getStartOffset();
+                            final var textUpToCursor = stringContainer.getContent();
 
                             suggestionList.forEach(suggestion -> {
                                 if (suggestion.shouldShowFor(textUpToCursor.substring(offset)))

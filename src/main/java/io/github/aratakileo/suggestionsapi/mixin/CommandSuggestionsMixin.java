@@ -1,8 +1,8 @@
 package io.github.aratakileo.suggestionsapi.mixin;
 
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
+import io.github.aratakileo.suggestionsapi.injector.StringContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;
@@ -50,16 +50,6 @@ public abstract class CommandSuggestionsMixin {
 
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
     private void updateCommandInfo(CallbackInfo ci){
-        final var contentText = input.getValue();
-        final var stringReader = new StringReader(contentText);
-        final var hasSlash = stringReader.canRead() && stringReader.peek() == '/';
-        final var cursorPosition = input.getCursorPosition();
-
-        if (hasSlash)
-            stringReader.skip();
-
-        if (commandsOnly || hasSlash) return;
-
         final var injectorProcessor = SuggestionsAPI.getInjectorProcessor();
         injectorProcessor.setNewSuggestionsApplier((textUpToCursor, suggestionList) -> {
             if (Objects.nonNull(pendingSuggestions)) {
@@ -80,7 +70,10 @@ public abstract class CommandSuggestionsMixin {
             });
         });
 
-        if (injectorProcessor.process(contentText.substring(0, cursorPosition))) return;
+        final var stringContainer = new StringContainer(input, commandsOnly);
+
+        if (injectorProcessor.process(stringContainer))
+            return;
 
         ci.cancel();
     }

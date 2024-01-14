@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public interface AsyncInjector extends Injector {
-    @Nullable Supplier<@Nullable List<Suggestion>> getAsyncApplier(@NotNull String currentExpression);
+    @Nullable Supplier<@Nullable List<Suggestion>> getAsyncApplier(@NotNull StringContainer stringContainer);
 }
