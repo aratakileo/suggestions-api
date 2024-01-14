@@ -1,4 +1,4 @@
-Version: **[[v1.0.3]]** | [v1.0.4](/README_v1.0.4.md)
+Version: **[v1.0.3]** | [[v1.0.4]](/README_v1.0.4.md)
 
 # Suggestions API
 ![](/preview/preview.png)
