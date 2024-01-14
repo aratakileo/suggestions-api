@@ -1,6 +1,6 @@
 Version: [[v1.0.3]](/README.md) | **[v1.0.4]**
 
-# Suggestions API
+# Suggestions API v1.0.4
 ![](/preview/preview.png)
 
 This library is injected into the Minecraft source code, which is responsible for the logic of Minecraft suggestions in chat, in order to provide a more convenient wrapper for adding or changing suggestions. Currently, the library contains interfaces for:
