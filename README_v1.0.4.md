@@ -16,41 +16,13 @@ for which the library provides ready-made implementations in the form of:
 - icon suggestion (texted suggestion with icon on the left or on the right with default or custom showing condition)
 - synchronous/asynchronous suggestions injector (dynamically adding suggestions when entering text into the input field based on matching the specified pattern of regex)
 
-### Which projects use the Suggestions API?
-These projects use the Suggestions API:
+### Which mods use the Suggestions API?
+These mods use the Suggestions API:
 - [emogg](https://modrinth.com/mod/emogg)
 - [JIME](https://modrinth.com/mod/jime)
 
 ### Getting started
-Merge the following with your
-
-<details><summary><code>build.gradle</code></summary>
-
-```groovy
-repositories {
-    maven {
-        url = "https://api.modrinth.com/maven"
-    }
-}
-
-dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.4"
-}
-```
-</details>
-
-<details><summary><code>build.gradle.kts</code></summary>
-
-```groovy
-repositories {
-    maven("https://api.modrinth.com/maven")
-}
-
-dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.4")
-}
-```
-</details>
+Not available
 
 # Quick DOCS
 Quick documentation that includes the basics of the library.

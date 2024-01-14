@@ -16,8 +16,8 @@ for which the library provides ready-made implementations in the form of:
 - icon suggestion (texted suggestion with icon on the left or on the right with default or custom showing condition)
 - synchronous/asynchronous suggestions injector (dynamically adding suggestions when entering text into the input field based on matching the specified pattern of regex)
 
-### Which projects use the Suggestions API?
-These projects use the Suggestions API:
+### Which mods use the Suggestions API?
+These mods use the Suggestions API:
 - [emogg](https://modrinth.com/mod/emogg)
 - [JIME](https://modrinth.com/mod/jime)
 
