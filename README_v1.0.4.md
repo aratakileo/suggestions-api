@@ -1,4 +1,4 @@
-Version: **[[v1.0.3]]** | [v1.0.4](/README_v1.0.4.md)
+Version: [[v1.0.3]](/README.md) | **[v1.0.4]**
 
 # Suggestions API
 ![](/preview/preview.png)
@@ -7,8 +7,8 @@ This library is injected into the Minecraft source code, which is responsible fo
 - adding suggestions synchronous/asynchronous based on the text entered by the user in the text input field
 - changing suggestions render
 - processing events related to suggestions:
-  - on session inited
-  - on suggestion selected
+    - on session inited
+    - on suggestion selected
 
 for which the library provides ready-made implementations in the form of:
 - always shown suggestion (texted suggestion with condition to always show it)
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.3"
+    modImplementation "maven.modrinth:suggestions-api:1.0.4"
 }
 ```
 </details>
@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.3")
+    modImplementation("maven.modrinth", "suggestions-api", "1.0.4")
 }
 ```
 </details>
@@ -122,7 +122,7 @@ To create a simple injector, there is a function `Injector.simple(...)`. As the 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile(":[A-Za-z0-9]*(:)?$"),
-        (currentExpression, startOffset) -> Stream.of(
+        (stringContainer, startOffset) -> Stream.of(
             "67487",
             "nothing",
             "bedrock",
@@ -136,9 +136,9 @@ or
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[A-Za-z0-9]+$"),
-        (currentExpression, startOffset) -> Stream.of(
-            "Hi, " + currentExpression.substring(startOffset) + '!',
-            '"' + currentExpression.substring(startOffset) + '"'
+        (stringContainer, startOffset) -> Stream.of(
+            "Hi, " + stringContainer.getContent().substring(startOffset) + '!',
+            '"' + stringContainer.getContent().substring(startOffset) + '"'
         ).map(Suggestion::alwaysShown).toList()
 ));
 ```
@@ -148,7 +148,7 @@ or
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile(":[0-9]*(:)?$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
@@ -157,7 +157,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
 
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(0, 9)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
@@ -170,7 +170,7 @@ By default, if detected string according to the regex pattern of the injector is
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile(":[0-9]*(:)?$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
@@ -184,7 +184,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
 
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(0, 9)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
@@ -198,7 +198,7 @@ If you need the suggestions to appear synchronously, you can use the function `I
 ```java
 SuggestionsAPI.registerInjector(Injector.async(
         /* insert your pattern here */,
-        (currentExpression, startOffset) -> {
+        (stringContainer, startOffset) -> {
             /* insert your async processing code here */
             
             return /* insert list of suggestion here */;
