@@ -94,8 +94,7 @@ public interface Injector {
             private int startOffset = 0;
 
             @Override
-            @Nullable
-            public Supplier<@Nullable List<Suggestion>> getAsyncApplier(
+            public @Nullable Supplier<@Nullable List<Suggestion>> getAsyncApplier(
                     @NotNull StringContainer stringContainer
             ) {
                 final var matcher = pattern.matcher(stringContainer.getContent());
