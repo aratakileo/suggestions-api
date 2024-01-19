@@ -2,7 +2,7 @@ package io.github.aratakileo.suggestionsapi.mixin;
 
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
-import io.github.aratakileo.suggestionsapi.injector.StringContainer;
+import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;

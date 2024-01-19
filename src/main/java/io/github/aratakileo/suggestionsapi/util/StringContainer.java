@@ -1,4 +1,4 @@
-package io.github.aratakileo.suggestionsapi.injector;
+package io.github.aratakileo.suggestionsapi.util;
 
 import net.minecraft.client.gui.components.EditBox;
 import org.jetbrains.annotations.NotNull;
