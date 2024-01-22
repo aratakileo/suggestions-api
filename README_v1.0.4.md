@@ -28,7 +28,7 @@ Not available
 Quick documentation that includes the basics of the library.
 
 ### What types of embedded suggestions are there?
-The `Suggestion` interface is located in the directory `io.github.aratakileo.suggestionsapi.suggestion`.
+The `Suggestion` interface is located in `io.github.aratakileo.suggestionsapi.suggestion`.
 
 The library has two built-in types of suggestions. Below are the functions for their initialization:
 - `Suggestion.simple(...)` - simple (just text)
@@ -68,28 +68,31 @@ final var alwaysShownSuggestion = Suggestion.alwaysShown("bonjour!");
 ```
 
 ### How to add new suggestions to the game?
-The `SuggestionsAPI` interface is located in the directory `io.github.aratakileo.suggestionsapi`.
+You can add new suggestions to the game using the `Injector` interface that is located in `io.github.aratakileo.suggestionsapi.injector`.
 
-To add your own suggestion use method `SuggestionsAPI.addSuggsetion(...)`:
-```java
-SuggestionsAPI.addSuggestion(simpleSuggestion);
-```
-
-If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.addResourceDependedContainer(...)` to avoid game crash:
-```java
-SuggestionsAPI.addResourceDependedContainer(
-        () -> List.of(Suggestion.withIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")))
-);
-```
-
-### How to dynamically inject suggestions?
-The `Injector` interface is located in the directory `io.github.aratakileo.suggestionsapi.injector`.
-
-There are two types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
+There are two basic types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
 
 To register an injector, it is necessary to pass it to function `SuggestionsAPI.registerInjector(...)` as a single argument.
 
-To create a simple injector, there is a function `Injector.simple(...)`. As the second argument, the function takes a lambda that describes the process of generating a list of suggestions and returns it. At the same time, the lambda has its own two arguments, the first of which contains a string with the current expression (the text in the input field that touches the cursor with the right edge and is found according to the specified pattern), and the second contains a number that is an offset between the beginning of the current expression and the original expression (the text in the input field between the nearest left space and the cursor). As an example, the addition of suggestions of numbers when trying to enter any of them is presented:
+To create a simple injector, there is a function `Injector.simple(...)` that returns `SuggestionsInjector`. Let's add two new simple suggestions (`Injector.ANYTHING_WITHOUT_SPACES_PATTERN` is `Pattern.compile("\\S+$")`):
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
+        (stringContainer, startOffset) -> List.of(simpleSuggestion, suggestionWithIcon)  // variables from the example above
+));
+```
+
+If you want your suggestions not to be displayed when entering a command, you can change the code as follows:
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
+        (stringContainer, startOffset) -> stringContainer.getContext().isNotCommand() ? List.of(simpleSuggestion, suggestionWithIcon) : null
+));
+```
+
+As the second argument, function `Injector.simple(...)` takes a lambda that describes the process of generating a list of suggestions and returns it. At the same time, the lambda has its own two arguments, the first of which contains a string with the current expression (the text in the input field that touches the cursor with the right edge and is found according to the specified pattern), and the second contains a number that is an offset between the beginning of the current expression and the original expression (the text in the input field between the nearest left space and the cursor). As an example, the addition of suggestions of numbers when trying to enter any of them is presented:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
@@ -127,6 +130,10 @@ SuggestionsAPI.registerInjector(Injector.simple(
             .toList()
 ));
 
+
+// The suggestions of this injector will not appear if the suggestions from the injector above appear, 
+// because the interaction string of this injector is included in the interaction string of the injector above
+
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]$"),
         (stringContainer, startOffset) -> IntStream.rangeClosed(0, 9)
@@ -151,8 +158,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
 ));
 
 
-// The suggestions of this injector will not appear if the suggestions from the injector above appear, 
-// because the interaction string of this injector is included in the interaction string of the injector above
+// The suggestions of this injector will appear if the suggestions from the injector above appear
 
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]$"),
@@ -178,4 +184,17 @@ SuggestionsAPI.registerInjector(Injector.async(
 ));
 ```
 
-Just as in the case of the previous function, a third argument can be specified in this function.
+Function `Injector.async(...)` returns `AsyncInjector`. Just as in the case of the previous function, a third argument can be specified in this function.
+
+### Can I replace Suggestions with new instances?
+The Suggestions API prohibits implicit replacement of suggestions, but it allows you to replace suggestions that were not added using it (that is, suggestions that were added by Minecraft or other mods that do not use the Suggestions API). If the suggestion you need has not yet been replaced by another mod, you can replace the suggestion using the `ReplacementInjector` that is located in `io.github.aratakileo.suggestionsapi.injector`. For example:
+
+```java
+// To check this, enter the command `give @s minecraft:barrier` in the chat or in the command block
+SuggestionsAPI.registerInjector(Injector.replacement(
+        nonApiSuggestion -> nonApiSuggestion.equals("minecraft:barrier") ? Suggestion.withIcon(
+                nonApiSuggestion,
+                new ResourceLocation("minecraft", "textures/item/barrier.png")
+        ) : null
+));
+```
