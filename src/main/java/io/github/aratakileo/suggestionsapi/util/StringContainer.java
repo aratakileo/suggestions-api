@@ -3,6 +3,8 @@ package io.github.aratakileo.suggestionsapi.util;
 import net.minecraft.client.gui.components.EditBox;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.regex.Pattern;
+
 public class StringContainer {
     private final String fullContent, contentUpToCursor;
     private final Context context;
@@ -42,7 +44,12 @@ public class StringContainer {
     }
 
     public @NotNull String getContent(boolean ignoreCursorPosition) {
-        return ignoreCursorPosition ? fullContent : contentUpToCursor;
+        return getContent(ignoreCursorPosition, true);
+    }
+
+    public @NotNull String getContent(boolean ignoreCursorPosition, boolean applyContext) {
+        return (applyContext && context.isChatCommand() ? "/" : "")
+                + (ignoreCursorPosition ? fullContent : contentUpToCursor);
     }
 
     public boolean isEmpty() {
