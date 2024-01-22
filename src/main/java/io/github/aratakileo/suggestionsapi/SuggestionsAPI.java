@@ -5,7 +5,6 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
