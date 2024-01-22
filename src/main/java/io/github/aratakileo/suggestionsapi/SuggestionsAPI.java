@@ -64,7 +64,7 @@ public class SuggestionsAPI implements ClientModInitializer {
     }
 
     public static void addSuggestion(@NotNull Suggestion suggestion) {
-        suggestions.put(suggestion.getSuggestionText(), suggestion);
+        suggestions.put(suggestion.getText(), suggestion);
     }
 
     public static void addResourceDependedContainer(@NotNull Supplier<@NotNull List<Suggestion>> container) {
@@ -169,7 +169,7 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                     if (!suggestion.shouldShowFor(textUpToCursor.substring(offset))) continue;
 
-                    final var suggestionText = suggestion.getSuggestionText();
+                    final var suggestionText = suggestion.getText();
 
                     if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) continue;
 
@@ -284,7 +284,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                             suggestionList.forEach(suggestion -> {
                                 if (!suggestion.shouldShowFor(textUpToCursor.substring(offset))) return;
 
-                                final var suggestionText = suggestion.getSuggestionText();
+                                final var suggestionText = suggestion.getText();
 
                                 if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) return;
 

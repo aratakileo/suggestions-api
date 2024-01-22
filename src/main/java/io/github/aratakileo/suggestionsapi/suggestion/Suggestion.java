@@ -10,10 +10,10 @@ import java.io.IOException;
 import java.util.function.BiFunction;
 
 public interface Suggestion {
-    String getSuggestionText();
+    String getText();
 
     default boolean shouldShowFor(@NotNull String currentExpression) {
-        return DEFAULT_CONDITION.apply(getSuggestionText(), currentExpression);
+        return DEFAULT_CONDITION.apply(getText(), currentExpression);
     }
 
     @NotNull
@@ -28,7 +28,7 @@ public interface Suggestion {
     ) {
         return new Suggestion() {
             @Override
-            public String getSuggestionText() {
+            public String getText() {
                 return suggestionText;
             }
 
@@ -90,7 +90,7 @@ public interface Suggestion {
             ) {
                 @Override
                 public boolean shouldShowFor(@NotNull String currentExpression) {
-                    return showCondition.apply(getSuggestionText(), currentExpression);
+                    return showCondition.apply(getText(), currentExpression);
                 }
             };
         } catch (IOException ignore) {}

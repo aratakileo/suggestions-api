@@ -75,7 +75,7 @@ public class IconSuggestion implements Suggestion, SuggestionRenderer {
     }
 
     @Override
-    public String getSuggestionText() {
+    public String getText() {
         return suggestionText;
     }
 
