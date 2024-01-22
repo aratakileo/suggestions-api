@@ -1,5 +1,7 @@
 package io.github.aratakileo.suggestionsapi.mixin;
 
+import com.google.common.collect.Lists;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
@@ -16,8 +18,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mixin(CommandSuggestions.class)
@@ -51,24 +55,42 @@ public abstract class CommandSuggestionsMixin {
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
     private void updateCommandInfo(CallbackInfo ci){
         final var injectorProcessor = SuggestionsAPI.getInjectorProcessor();
-        injectorProcessor.setNewSuggestionsApplier((textUpToCursor, suggestionList) -> {
-            if (Objects.nonNull(pendingSuggestions)) {
-                suggestionList = Stream.concat(
-                        pendingSuggestions.join().getList().stream(),
-                        suggestionList.stream()
-                ).toList();
-            }
+        injectorProcessor.setMinecraftSuggestionsCallback(
+                (textUpToCursor, suggestionList) -> {
+                    if (Objects.nonNull(pendingSuggestions)) {
+                        suggestionList = Stream.concat(
+                                pendingSuggestions.join().getList().stream(),
+                                suggestionList.stream()
+                        ).toList();
+                    }
 
-            pendingSuggestions = CompletableFuture.completedFuture(Suggestions.create(
-                    textUpToCursor,
-                    suggestionList
-            ));
+                    pendingSuggestions = CompletableFuture.completedFuture(Suggestions.create(
+                            textUpToCursor,
+                            suggestionList
+                    ));
 
-            pendingSuggestions.thenRun(() -> {
-                if (pendingSuggestions.isDone())
-                    ((CommandSuggestions) (Object) this).showSuggestions(false);
-            });
-        });
+                    pendingSuggestions.thenRun(() -> {
+                        if (pendingSuggestions.isDone())
+                            ((CommandSuggestions) (Object) this).showSuggestions(false);
+                    });
+                },
+                () -> {
+                    if (Objects.isNull(pendingSuggestions))
+                        return List.of();
+
+                    final var returnable = Lists.newArrayList(
+                            pendingSuggestions.join()
+                                    .getList()
+                                    .stream()
+                                    .map(Suggestion::getText)
+                                    .toList()
+                    );
+
+                    returnable.removeIf(SuggestionsAPI::hasCachedSuggestion);
+
+                    return returnable;
+                }
+        );
 
         final var stringContainer = new StringContainer(input, commandsOnly);
 

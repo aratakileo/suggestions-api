@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -24,7 +25,8 @@ public class SuggestionsAPI implements ClientModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
     private final static HashMap<@NotNull AsyncInjector, @NotNull CompletableFuture<@NotNull Void>> asyncProcessors
             = new HashMap<>();
-    private final static @NotNull HashMap<@NotNull String, @NotNull Suggestion> suggestions = new HashMap<>();
+    private final static @NotNull ConcurrentHashMap<@NotNull String, @NotNull Suggestion> suggestions
+            = new ConcurrentHashMap<>();
     private final static ArrayList<@NotNull Injector> injectors = new ArrayList<>();
     private final static ArrayList<@NotNull Supplier<@NotNull List<Suggestion>>> resourceDependedSuggestionContainers
             = new ArrayList<>();
@@ -56,6 +58,9 @@ public class SuggestionsAPI implements ClientModInitializer {
                     }
                 }
         );
+
+        registerInjector(Injector.simple(Injector.SIMPLE_WORD_PATTERN, ((stringContainer, startingOffset) -> List.of(Suggestion.alwaysShown("often")))));
+        registerInjector(Injector.async(Injector.SIMPLE_WORD_PATTERN, ((stringContainer, startingOffset) -> List.of(Suggestion.alwaysShown("often")))));
     }
 
     public static void addSuggestion(@NotNull Suggestion suggestion) {
@@ -81,6 +86,14 @@ public class SuggestionsAPI implements ClientModInitializer {
         suggestions.remove(suggestionText);
     }
 
+    public static boolean hasSuggestion(@NotNull String suggestionText) {
+        return suggestions.containsKey(suggestionText) || hasCachedSuggestion(suggestionText);
+    }
+
+    public static boolean hasCachedSuggestion(@NotNull String suggestionText) {
+        return Objects.nonNull(cachedSuggestions) && cachedSuggestions.containsKey(suggestionText);
+    }
+
     public static @Nullable Suggestion getSuggestion(@NotNull String suggestionText) {
         return suggestions.containsKey(suggestionText)
                 ? suggestions.get(suggestionText)
@@ -100,14 +113,17 @@ public class SuggestionsAPI implements ClientModInitializer {
     public static class InjectorProcessor {
         private BiConsumer<@NotNull String, @NotNull List<com.mojang.brigadier.suggestion.Suggestion>>
                 newSuggestionsApplier;
+        private Supplier<@NotNull List<@NotNull String>> nonApiSuggestionsConsumer;
 
         private InjectorProcessor() {}
 
-        public void setNewSuggestionsApplier(
+        public void setMinecraftSuggestionsCallback(
                 @NotNull BiConsumer<@NotNull String, @NotNull List<com.mojang.brigadier.suggestion.Suggestion>>
-                        newSuggestionsApplier
+                        newSuggestionsApplier,
+                Supplier<@NotNull List<@NotNull String>> nonApiSuggestionsConsumer
         ) {
             this.newSuggestionsApplier = newSuggestionsApplier;
+            this.nonApiSuggestionsConsumer = nonApiSuggestionsConsumer;
         }
 
         public static void initSession() {
@@ -135,8 +151,9 @@ public class SuggestionsAPI implements ClientModInitializer {
             cachedSuggestions = new HashMap<>();
             injectorsCache = new HashMap<>();
 
+            final var nonApiSuggestions = nonApiSuggestionsConsumer.get();
             final var asyncInjectorsBuffer = new HashMap<@NotNull AsyncInjector, @NotNull Runnable>();
-            final var minOffset = processInjectors(stringContainer, asyncInjectorsBuffer);
+            final var minOffset = processInjectors(stringContainer, asyncInjectorsBuffer, nonApiSuggestions);
             final var applicableMojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
             final var textUpToCursor = stringContainer.getContent();
 
@@ -152,19 +169,23 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                     if (!suggestion.shouldShowFor(textUpToCursor.substring(offset))) continue;
 
+                    final var suggestionText = suggestion.getSuggestionText();
+
+                    if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) continue;
+
                     applicableMojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
                             StringRange.between(
                                     offset,
                                     textUpToCursor.length()
                             ),
-                            suggestion.getSuggestionText()
+                            suggestionText
                     ));
 
-                    cachedSuggestions.put(suggestion.getSuggestionText(), suggestion);
+                    cachedSuggestions.put(suggestionText, suggestion);
                 }
             }
 
-            processSuggestions(textUpToCursor, applicableMojangSuggestions);
+            processSuggestions(textUpToCursor, applicableMojangSuggestions, nonApiSuggestions);
 
             var hasUsedAsyncInjector = false;
 
@@ -196,24 +217,33 @@ public class SuggestionsAPI implements ClientModInitializer {
 
         private void processSuggestions(
                 @NotNull String textUpToCursor,
-                @NotNull ArrayList<com.mojang.brigadier.suggestion.Suggestion> applicableMojangSuggestions
+                @NotNull ArrayList<com.mojang.brigadier.suggestion.Suggestion> applicableMojangSuggestions,
+                @NotNull List<@NotNull String> nonApiSuggestions
         ) {
             final var upToCursorMatcher = Injector.ANYTHING_WITHOUT_SPACES_PATTERN.matcher(textUpToCursor);
 
             if (!upToCursorMatcher.find()) return;
 
             suggestions.forEach((suggestionText, suggestion) -> {
-                if (suggestion.shouldShowFor(textUpToCursor.substring(upToCursorMatcher.start())))
-                    applicableMojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
-                            StringRange.between(upToCursorMatcher.start(), textUpToCursor.length()),
-                            suggestionText
-                    ));
+                if (!suggestion.shouldShowFor(textUpToCursor.substring(upToCursorMatcher.start()))) return;
+
+                if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) {
+                    suggestions.remove(suggestionText);
+                    LOGGER.warn("[Suggestions API] Static suggestion `" + suggestionText + "` has been removed (reason: implicit replacement other suggestion)!");
+                    return;
+                }
+
+                applicableMojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
+                        StringRange.between(upToCursorMatcher.start(), textUpToCursor.length()),
+                        suggestionText
+                ));
             });
         }
 
         private int processInjectors(
                 @NotNull StringContainer stringContainer,
-                @NotNull HashMap<@NotNull AsyncInjector, @NotNull Runnable> asyncInjectorBuffer
+                @NotNull HashMap<@NotNull AsyncInjector, @NotNull Runnable> asyncInjectorBuffer,
+                @NotNull List<@NotNull String> nonApiSuggestions
         ) {
             var minOffset = -1;
 
@@ -252,11 +282,18 @@ public class SuggestionsAPI implements ClientModInitializer {
                             final var textUpToCursor = stringContainer.getContent();
 
                             suggestionList.forEach(suggestion -> {
-                                if (suggestion.shouldShowFor(textUpToCursor.substring(offset)))
-                                    mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
-                                            StringRange.between(offset, textUpToCursor.length()),
-                                            suggestion.getSuggestionText()
-                                    ));
+                                if (!suggestion.shouldShowFor(textUpToCursor.substring(offset))) return;
+
+                                final var suggestionText = suggestion.getSuggestionText();
+
+                                if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) return;
+
+                                mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
+                                        StringRange.between(offset, textUpToCursor.length()),
+                                        suggestionText
+                                ));
+
+                                cachedSuggestions.put(suggestionText, suggestion);
                             });
 
                             if (mojangSuggestions.isEmpty()) {
@@ -273,7 +310,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                 }
 
                 if (!isValidInjector) {
-                    LOGGER.error("Invalid Injector! (" + injector + ")");
+                    LOGGER.error("[Suggestions API] Invalid Injector! (" + injector + ")");
 
                     continue;
                 }
@@ -294,6 +331,23 @@ public class SuggestionsAPI implements ClientModInitializer {
             }
 
             return minOffset;
+        }
+
+        private boolean isImplicitSuggestionsReplacement(
+                @NotNull List<@NotNull String> nonApiSuggestions,
+                @NotNull String suggestionText
+        ) {
+            if (nonApiSuggestions.contains(suggestionText) || hasSuggestion(suggestionText)) {
+                LOGGER.error(
+                        "[Suggestions API] Implicit replacement of other suggestions is prohibited! (prohibition for `"
+                                + suggestionText
+                                + "`)"
+                );
+
+                return true;
+            }
+
+            return false;
         }
     }
 }
