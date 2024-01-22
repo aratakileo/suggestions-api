@@ -3,8 +3,6 @@ package io.github.aratakileo.suggestionsapi.util;
 import net.minecraft.client.gui.components.EditBox;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.regex.Pattern;
-
 public class StringContainer {
     private final String fullContent, contentUpToCursor;
     private final Context context;
@@ -19,7 +17,7 @@ public class StringContainer {
 
         final var hasSlash = !inputValue.isEmpty() && inputValue.charAt(0) == '/';
 
-        context = isCommandsOnly ? Context.COMMAND_BLOCK : (hasSlash ? Context.CHAT_COMMAND : Context.OTHER);
+        context = isCommandsOnly ? Context.COMMAND_BLOCK : (hasSlash ? Context.CHAT_COMMAND : Context.NOT_COMMAND);
 
         if (inputValue.isEmpty()) {
             fullContent = "";
@@ -57,12 +55,12 @@ public class StringContainer {
     }
 
     public enum Context {
-        OTHER,
+        NOT_COMMAND,
         COMMAND_BLOCK,
         CHAT_COMMAND;
 
-        public boolean isOther() {
-            return this == OTHER;
+        public boolean isNotCommand() {
+            return this == NOT_COMMAND;
         }
 
         public boolean isCommandBlock() {
