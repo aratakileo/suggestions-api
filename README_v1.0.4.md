@@ -190,7 +190,7 @@ Function `Injector.async(...)` returns `AsyncInjector`. Just as in the case of t
 The Suggestions API prohibits implicit replacement of suggestions, but it allows you to replace suggestions that were not added using it (that is, suggestions that were added by Minecraft or other mods that do not use the Suggestions API). If the suggestion you need has not yet been replaced by another mod, you can replace the suggestion using the `ReplacementInjector` that is located in `io.github.aratakileo.suggestionsapi.injector`. For example:
 
 ```java
-// To check this, enter the command `give @s minecraft:barrier` in the chat or in the command block
+// To check this, start entering the command `give @s minecraft:barrier` in the chat or in the command block
 SuggestionsAPI.registerInjector(Injector.replacement(
         nonApiSuggestion -> nonApiSuggestion.equals("minecraft:barrier") ? Suggestion.withIcon(
                 nonApiSuggestion,
