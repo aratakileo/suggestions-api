@@ -9,6 +9,7 @@ This library is injected into the Minecraft source code, which is responsible fo
 - processing events related to suggestions:
     - on session inited
     - on suggestion selected
+- replacing suggestions created by non Suggestions API
 
 for which the library provides ready-made implementations in the form of:
 - always shown suggestion (texted suggestion with condition to always show it)
@@ -61,7 +62,9 @@ or
 final var anotherSimpleSuggetion = Suggestion.simple("bonjour!", String::equalsIgnoreCase);
 ```
 
-If you want the suggestions to be displayed always, regardless of the entered text, you can specify condition `(suggestionText, currentExpression) -> true` that is used by default when initializing suggestions in functions `Suggestion.alwaysShown(...)` (as an alternative to the function `Suggestion.simple(...)`) and `Suggestion.alwaysShownWithIcon(...)` (as an alternative to the function `Suggestion.withIcon(...)`):
+The default condition for functions `Suggestion.simple(...)` and `Suggestion.withIcon(...)` is `(suggestionText, currentExpression) -> suggestionText.toLowerCase().startsWith(currentExpression.toLowerCase())` or `Suggestion::DEFAULT_CONDITION`.
+
+If you want the suggestions to be displayed always, regardless of the entered text, you can specify condition `(suggestionText, currentExpression) -> true` or `Suggestion::ALWAYS_SHOW_CONDITION` that is used by default when initializing suggestions in functions `Suggestion.alwaysShown(...)` (as an alternative to the function `Suggestion.simple(...)`) and `Suggestion.alwaysShownWithIcon(...)` (as an alternative to the function `Suggestion.withIcon(...)`):
 
 ```java
 final var alwaysShownSuggestion = Suggestion.alwaysShown("bonjour!");
@@ -79,16 +82,26 @@ To create a simple injector, there is a function `Injector.simple(...)` that ret
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
-        (stringContainer, startOffset) -> List.of(simpleSuggestion, suggestionWithIcon)  // variables from the example above
+        (stringContainer, startOffset) -> List.of(
+                Suggestion.alwaysShownWithIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")),
+                alwaysShownSuggestion
+        )  // variables from the example above
 ));
 ```
+
+The result will look like this:
+
+![](/preview/preview.png)
 
 If you want your suggestions not to be displayed when entering a command, you can change the code as follows:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
-        (stringContainer, startOffset) -> stringContainer.getContext().isNotCommand() ? List.of(simpleSuggestion, suggestionWithIcon) : null
+        (stringContainer, startOffset) -> stringContainer.getContext().isNotCommand() ? List.of(
+                Suggestion.alwaysShownWithIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")),
+                alwaysShownSuggestion
+        ) : null  // variables from the example above
 ));
 ```
 
@@ -198,3 +211,7 @@ SuggestionsAPI.registerInjector(Injector.replacement(
         ) : null
 ));
 ```
+
+The result will look like this:
+
+![](/preview/preview-1.png)
