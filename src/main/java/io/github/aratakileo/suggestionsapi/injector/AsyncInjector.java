@@ -8,6 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface AsyncInjector extends Injector {
+public interface AsyncInjector extends InputRelatedInjector {
     @Nullable Supplier<@Nullable List<Suggestion>> getAsyncApplier(@NotNull StringContainer stringContainer);
 }

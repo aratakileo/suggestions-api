@@ -5,6 +5,7 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,7 +29,8 @@ public class SuggestionsAPI implements ClientModInitializer {
     private static HashMap<@NotNull Injector, @NotNull Collection<@NotNull Suggestion>> injectorsCache = null;
 
     @Override
-    public void onInitializeClient() {}
+    public void onInitializeClient() {
+    }
 
     public static boolean hasCachedSuggestion(@NotNull String suggestionText) {
         return Objects.nonNull(cachedSuggestions) && cachedSuggestions.containsKey(suggestionText);
@@ -95,9 +97,12 @@ public class SuggestionsAPI implements ClientModInitializer {
             final var textUpToCursor = stringContainer.getContent();
 
             for (final var injectorEntry: injectorsCache.entrySet()) {
-                if (!(injectorEntry.getKey() instanceof SuggestionsInjector)) continue;
+                if (
+                        !(injectorEntry.getKey() instanceof SuggestionsInjector)
+                                && !(injectorEntry.getKey() instanceof InputRelatedInjector)
+                ) continue;
 
-                final var injector = injectorEntry.getKey();
+                final var injector = (InputRelatedInjector) injectorEntry.getKey();
 
                 if (minOffset != -1 && !injector.isNestable() && injector.getStartOffset() > minOffset) continue;
 
@@ -173,6 +178,38 @@ public class SuggestionsAPI implements ClientModInitializer {
                     }
                 }
 
+                if (injector instanceof ReplacementInjector replacementInjector) {
+                    isValidInjector = true;
+
+                    nonApiSuggestions.forEach(nonApiSuggestion -> {
+                        final var newSuggestion = replacementInjector.getReplace(nonApiSuggestion);
+
+                        if (Objects.isNull(newSuggestion)) return;
+
+                        if (hasCachedSuggestion(nonApiSuggestion)) {
+                            LOGGER.error(
+                                    "[Suggestions API] Replacement is cancelled (reason: suggestion `"
+                                            + nonApiSuggestion
+                                            + "` is already replaced)"
+                            );
+                            return;
+                        }
+
+                        if (!newSuggestion.getText().equals(nonApiSuggestion)) {
+                            LOGGER.error(
+                                    "[Suggestions API] Replacement is cancelled (reason: expected suggestion `"
+                                            + nonApiSuggestion
+                                            + "` but got suggestion `"
+                                            + newSuggestion.getText()
+                                            + "`)"
+                            );
+                            return;
+                        }
+
+                        cachedSuggestions.put(nonApiSuggestion, newSuggestion);
+                    });
+                }
+
                 if (injector instanceof AsyncInjector asyncInjector) {
                     isValidInjector = true;
 
@@ -188,7 +225,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                             }
 
                             final var mojangSuggestions = new ArrayList<com.mojang.brigadier.suggestion.Suggestion>();
-                            final var offset = injector.getStartOffset();
+                            final var offset = asyncInjector.getStartOffset();
                             final var textUpToCursor = stringContainer.getContent();
 
                             suggestionList.forEach(suggestion -> {
@@ -228,17 +265,19 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                 if (!isActiveInjector) continue;
 
-                if (injector.getStartOffset() == 0) {
-                    minOffset = 0;
-                    continue;
-                }
+                if (injector instanceof InputRelatedInjector inputRelatedInjector) {
+                    if (inputRelatedInjector.getStartOffset() == 0) {
+                        minOffset = 0;
+                        continue;
+                    }
 
-                if (minOffset != -1) {
-                    minOffset = Math.min(minOffset, injector.getStartOffset());
-                    continue;
-                }
+                    if (minOffset != -1) {
+                        minOffset = Math.min(minOffset, inputRelatedInjector.getStartOffset());
+                        continue;
+                    }
 
-                minOffset = injector.getStartOffset();
+                    minOffset = inputRelatedInjector.getStartOffset();
+                }
             }
 
             return minOffset;
@@ -250,7 +289,7 @@ public class SuggestionsAPI implements ClientModInitializer {
         ) {
             if (nonApiSuggestions.contains(suggestionText) || hasCachedSuggestion(suggestionText)) {
                 LOGGER.error(
-                        "[Suggestions API] Implicit replacement of other suggestions is prohibited! (prohibition for `"
+                        "[Suggestions API] Implicit replacement of other suggestions is prohibited (prohibited suggestion `"
                                 + suggestionText
                                 + "`)"
                 );

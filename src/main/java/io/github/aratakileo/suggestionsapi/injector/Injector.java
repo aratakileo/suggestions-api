@@ -17,14 +17,6 @@ public interface Injector {
             NAMESPACABLE_IDENTIFIER_PATTERN = Pattern.compile("([A-Za-z0-9_]+:)?[A-Za-z0-9_]+$"),
             ANYTHING_WITHOUT_SPACES_PATTERN = Pattern.compile("\\S+$");
 
-    default int getStartOffset() {
-        return 0;
-    }
-
-    default boolean isNestable() {
-        return false;
-    }
-
     static @NotNull SuggestionsInjector simple(
             @NotNull Pattern pattern,
             BiFunction<
@@ -117,5 +109,9 @@ public interface Injector {
                 return isNestable;
             }
         };
+    }
+
+    static @NotNull ReplacementInjector replacement(@NotNull ReplacementInjector replacementInjector) {
+        return replacementInjector;
     }
 }
