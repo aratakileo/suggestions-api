@@ -35,8 +35,8 @@ public class StringContainer {
         return getContent(false);
     }
 
-    public @NotNull String getContent(boolean ignoreCursor) {
-        return ignoreCursor ? fullContent : contentUpToCursor;
+    public @NotNull String getContent(boolean ignoreCursorPosition) {
+        return ignoreCursorPosition ? fullContent : contentUpToCursor;
     }
 
     public boolean isEmpty() {
