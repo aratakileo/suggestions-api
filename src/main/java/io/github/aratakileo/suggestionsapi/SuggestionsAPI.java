@@ -5,11 +5,6 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -25,8 +19,6 @@ public class SuggestionsAPI implements ClientModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
     private final static HashMap<@NotNull AsyncInjector, @NotNull CompletableFuture<@NotNull Void>> asyncProcessors
             = new HashMap<>();
-    private final static @NotNull ConcurrentHashMap<@NotNull String, @NotNull Suggestion> suggestions
-            = new ConcurrentHashMap<>();
     private final static ArrayList<@NotNull Injector> injectors = new ArrayList<>();
     private final static ArrayList<@NotNull Supplier<@NotNull List<Suggestion>>> resourceDependedSuggestionContainers
             = new ArrayList<>();
@@ -34,72 +26,16 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     private static HashMap<@NotNull String, @NotNull Suggestion> cachedSuggestions = null;
     private static HashMap<@NotNull Injector, @NotNull Collection<@NotNull Suggestion>> injectorsCache = null;
-    private static boolean areResourcesLoaded = false;
 
     @Override
-    public void onInitializeClient() {
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new SimpleSynchronousResourceReloadListener() {
-                    @Override
-                    public ResourceLocation getFabricId() {
-                        return new ResourceLocation("suggestionsapi", "");
-                    }
-
-                    @Override
-                    public void onResourceManagerReload(ResourceManager resourceManager) {
-                        if (areResourcesLoaded) return;
-
-                        areResourcesLoaded = true;
-
-                        resourceDependedSuggestionContainers.forEach(
-                                container -> container.get().forEach(SuggestionsAPI::addSuggestion)
-                        );
-                        resourceDependedSuggestionContainers.clear();
-                    }
-                }
-        );
-
-        registerInjector(Injector.simple(Injector.SIMPLE_WORD_PATTERN, ((stringContainer, startingOffset) -> List.of(Suggestion.alwaysShown("often")))));
-        registerInjector(Injector.async(Injector.SIMPLE_WORD_PATTERN, ((stringContainer, startingOffset) -> List.of(Suggestion.alwaysShown("often")))));
-    }
-
-    public static void addSuggestion(@NotNull Suggestion suggestion) {
-        suggestions.put(suggestion.getText(), suggestion);
-    }
-
-    public static void addResourceDependedContainer(@NotNull Supplier<@NotNull List<Suggestion>> container) {
-        if (areResourcesLoaded) {
-            container.get().forEach(SuggestionsAPI::addSuggestion);
-            return;
-        }
-
-        resourceDependedSuggestionContainers.add(container);
-    }
-
-    public static void removeSuggestion(@NotNull Suggestion suggestion) {
-        if (!suggestions.containsValue(suggestion)) return;
-
-        suggestions.values().remove(suggestion);
-    }
-
-    public static void removeSuggestion(@NotNull String suggestionText) {
-        suggestions.remove(suggestionText);
-    }
-
-    public static boolean hasSuggestion(@NotNull String suggestionText) {
-        return suggestions.containsKey(suggestionText) || hasCachedSuggestion(suggestionText);
-    }
+    public void onInitializeClient() {}
 
     public static boolean hasCachedSuggestion(@NotNull String suggestionText) {
         return Objects.nonNull(cachedSuggestions) && cachedSuggestions.containsKey(suggestionText);
     }
 
-    public static @Nullable Suggestion getSuggestion(@NotNull String suggestionText) {
-        return suggestions.containsKey(suggestionText)
-                ? suggestions.get(suggestionText)
-                : Objects.nonNull(cachedSuggestions)
-                        ? cachedSuggestions.get(suggestionText)
-                        : null;
+    public static @Nullable Suggestion getCachedSuggestion(@NotNull String suggestionText) {
+        return Objects.nonNull(cachedSuggestions) ? cachedSuggestions.get(suggestionText) : null;
     }
 
     public static void registerInjector(@NotNull Injector injector) {
@@ -115,7 +51,8 @@ public class SuggestionsAPI implements ClientModInitializer {
                 newSuggestionsApplier;
         private Supplier<@NotNull List<@NotNull String>> nonApiSuggestionsConsumer;
 
-        private InjectorProcessor() {}
+        private InjectorProcessor() {
+        }
 
         public void setMinecraftSuggestionsCallback(
                 @NotNull BiConsumer<@NotNull String, @NotNull List<com.mojang.brigadier.suggestion.Suggestion>>
@@ -132,7 +69,7 @@ public class SuggestionsAPI implements ClientModInitializer {
         }
 
         public static void selectSuggestion(@NotNull String suggestionText) {
-            final var suggestion = SuggestionsAPI.getSuggestion(suggestionText);
+            final var suggestion = SuggestionsAPI.getCachedSuggestion(suggestionText);
 
             if (Objects.isNull(suggestion) || Objects.isNull(injectorsCache)) return;
 
@@ -185,8 +122,6 @@ public class SuggestionsAPI implements ClientModInitializer {
                 }
             }
 
-            processSuggestions(textUpToCursor, applicableMojangSuggestions, nonApiSuggestions);
-
             var hasUsedAsyncInjector = false;
 
             for (final var injectorEntry: asyncInjectorsBuffer.entrySet()) {
@@ -213,31 +148,6 @@ public class SuggestionsAPI implements ClientModInitializer {
             newSuggestionsApplier.accept(textUpToCursor, applicableMojangSuggestions);
 
             return true;
-        }
-
-        private void processSuggestions(
-                @NotNull String textUpToCursor,
-                @NotNull ArrayList<com.mojang.brigadier.suggestion.Suggestion> applicableMojangSuggestions,
-                @NotNull List<@NotNull String> nonApiSuggestions
-        ) {
-            final var upToCursorMatcher = Injector.ANYTHING_WITHOUT_SPACES_PATTERN.matcher(textUpToCursor);
-
-            if (!upToCursorMatcher.find()) return;
-
-            suggestions.forEach((suggestionText, suggestion) -> {
-                if (!suggestion.shouldShowFor(textUpToCursor.substring(upToCursorMatcher.start()))) return;
-
-                if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) {
-                    suggestions.remove(suggestionText);
-                    LOGGER.warn("[Suggestions API] Static suggestion `" + suggestionText + "` has been removed (reason: implicit replacement other suggestion)!");
-                    return;
-                }
-
-                applicableMojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
-                        StringRange.between(upToCursorMatcher.start(), textUpToCursor.length()),
-                        suggestionText
-                ));
-            });
         }
 
         private int processInjectors(
@@ -286,7 +196,8 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                                 final var suggestionText = suggestion.getText();
 
-                                if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText)) return;
+                                if (isImplicitSuggestionsReplacement(nonApiSuggestions, suggestionText))
+                                    return;
 
                                 mojangSuggestions.add(new com.mojang.brigadier.suggestion.Suggestion(
                                         StringRange.between(offset, textUpToCursor.length()),
@@ -337,7 +248,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                 @NotNull List<@NotNull String> nonApiSuggestions,
                 @NotNull String suggestionText
         ) {
-            if (nonApiSuggestions.contains(suggestionText) || hasSuggestion(suggestionText)) {
+            if (nonApiSuggestions.contains(suggestionText) || hasCachedSuggestion(suggestionText)) {
                 LOGGER.error(
                         "[Suggestions API] Implicit replacement of other suggestions is prohibited! (prohibition for `"
                                 + suggestionText

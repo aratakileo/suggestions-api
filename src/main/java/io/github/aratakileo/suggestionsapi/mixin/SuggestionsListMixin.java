@@ -1,7 +1,7 @@
 package io.github.aratakileo.suggestionsapi.mixin;
 
-import com.mojang.brigadier.suggestion.Suggestion;
 import io.github.aratakileo.suggestionsapi.SuggestionsAPI;
+import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import io.github.aratakileo.suggestionsapi.suggestion.SuggestionRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,7 +24,7 @@ public class SuggestionsListMixin {
     private Rect2i rect;
 
     @Shadow @Final
-    private List<Suggestion> suggestionList;
+    private List<com.mojang.brigadier.suggestion.Suggestion> suggestionList;
 
     @Shadow
     private int current;
@@ -40,15 +40,15 @@ public class SuggestionsListMixin {
             int x,
             int y,
             int width,
-            List<Suggestion> suggestions,
+            List<com.mojang.brigadier.suggestion.Suggestion> suggestions,
             boolean bl,
             CallbackInfo ci
     ){
         suggestions.forEach(mojangSuggestion -> {
-            io.github.aratakileo.suggestionsapi.suggestion.Suggestion suggestion;
+            Suggestion suggestion;
 
             if (
-                    Objects.nonNull(suggestion = SuggestionsAPI.getSuggestion(mojangSuggestion.getText()))
+                    Objects.nonNull(suggestion = SuggestionsAPI.getCachedSuggestion(mojangSuggestion.getText()))
                             && suggestion instanceof SuggestionRenderer
             ) {
                 rect.setWidth(Math.max(
@@ -61,9 +61,10 @@ public class SuggestionsListMixin {
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;III)I"))
     private int updateCommandInfo(GuiGraphics instance, Font font, String suggestionText, int x, int y, int color){
-        io.github.aratakileo.suggestionsapi.suggestion.Suggestion suggestion;
+        Suggestion suggestion;
+
         if (
-                Objects.isNull(suggestion = SuggestionsAPI.getSuggestion(suggestionText))
+                Objects.isNull(suggestion = SuggestionsAPI.getCachedSuggestion(suggestionText))
                         || !(suggestion instanceof SuggestionRenderer)
         ) return instance.drawString(font, suggestionText, x, y, color);
 
