@@ -15,9 +15,15 @@ public class StringContainer {
     public StringContainer(@NotNull String inputValue, int cursorPosition, boolean isCommandsOnly) {
         this.cursorPosition = cursorPosition;
 
-        final var hasSlash = inputValue.charAt(0) == '/';
+        final var hasSlash = !inputValue.isEmpty() && inputValue.charAt(0) == '/';
 
         context = isCommandsOnly ? Context.COMMAND_BLOCK : (hasSlash ? Context.CHAT_COMMAND : Context.OTHER);
+
+        if (inputValue.isEmpty()) {
+            fullContent = "";
+            contentUpToCursor = "";
+            return;
+        }
 
         fullContent = hasSlash ? inputValue.substring(1) : inputValue;
         contentUpToCursor = inputValue.substring(hasSlash ? 1 : 0, cursorPosition);
