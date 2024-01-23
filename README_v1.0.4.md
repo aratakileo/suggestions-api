@@ -157,7 +157,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
 ));
 ```
 
-By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `true` as the third (last) argument. For example:
+By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `InputRelatedInjector.NestingStatus.ALL_NESTABLE` as the third (last) argument. For example:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
@@ -167,7 +167,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
             .toList(),
-        true
+        InputRelatedInjector.NestingStatus.ALL_NESTABLE
 ));
 
 
@@ -180,9 +180,14 @@ SuggestionsAPI.registerInjector(Injector.simple(
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
             .toList(),
-        true
+        InputRelatedInjector.NestingStatus.ALL_NESTABLE
 ));
 ```
+
+There are other possible values for this argument:
+- `InputRelatedInjector.NestingStatus.NOT_NESTABLE` - uses by default
+- `InputRelatedInjector.NestingStatus.ONLY_API_NESTABLE` - allow nesting only for the suggestions added using the Suggestions API
+- `InputRelatedInjector.NestingStatus.ONLY_NON_API_NESTABLE` - allow nesting only for the suggestions added outside the Suggestions API
 
 If you need the suggestions to appear synchronously, you can use the function `Injector.async(...)` to initialize the asynchronous injector. The injector initialized with this function provides a mechanism for canceling the current asynchronous process if a request for a new one has been received, and the current process has not had time to complete by this time. This function is similar to the previous one, but this time the second argument, namely lambda, returns a lambda without arguments, which will be launched as an asynchronous process, and has three arguments, the last of which is a lambda that accepts a list of new suggestions and should be used inside the lambda of an asynchronous process. For example:
 
