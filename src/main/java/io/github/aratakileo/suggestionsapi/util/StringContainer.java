@@ -54,6 +54,14 @@ public class StringContainer {
         return !context.isChatCommand() && fullContent.isEmpty();
     }
 
+    public boolean equals(@NotNull StringContainer other) {
+        return this == other || (
+                fullContent.equals(other.fullContent)
+                        && cursorPosition == other.cursorPosition
+                        && context == other.context
+        );
+    }
+
     public enum Context {
         NOT_COMMAND,
         COMMAND_BLOCK,

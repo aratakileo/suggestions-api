@@ -21,7 +21,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mixin(CommandSuggestions.class)
@@ -55,6 +54,11 @@ public abstract class CommandSuggestionsMixin {
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
     private void updateCommandInfo(CallbackInfo ci){
         final var injectorProcessor = SuggestionsAPI.getInjectorProcessor();
+        final var stringContainer = new StringContainer(input, commandsOnly);
+
+        if (injectorProcessor.hasItBeenProcessedYetFor(stringContainer))
+            return;
+
         injectorProcessor.setMinecraftSuggestionsCallback(
                 (textUpToCursor, suggestionList) -> {
                     if (Objects.nonNull(pendingSuggestions)) {
@@ -91,8 +95,6 @@ public abstract class CommandSuggestionsMixin {
                     return returnable;
                 }
         );
-
-        final var stringContainer = new StringContainer(input, commandsOnly);
 
         if (injectorProcessor.process(stringContainer))
             return;

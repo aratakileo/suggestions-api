@@ -5,6 +5,7 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -16,12 +17,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 public class SuggestionsAPI implements ClientModInitializer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
     private final static HashMap<@NotNull AsyncInjector, @NotNull CompletableFuture<@NotNull Void>> asyncProcessors
             = new HashMap<>();
     private final static ArrayList<@NotNull Injector> injectors = new ArrayList<>();
-    private final static ArrayList<@NotNull Supplier<@NotNull List<Suggestion>>> resourceDependedSuggestionContainers
-            = new ArrayList<>();
     private final static @NotNull InjectorProcessor injectorProcessor = new InjectorProcessor();
 
     private static HashMap<@NotNull String, @NotNull Suggestion> cachedSuggestions = null;
@@ -51,8 +50,13 @@ public class SuggestionsAPI implements ClientModInitializer {
         private BiConsumer<@NotNull String, @NotNull List<com.mojang.brigadier.suggestion.Suggestion>>
                 newSuggestionsApplier;
         private Supplier<@NotNull List<@NotNull String>> nonApiSuggestionsConsumer;
+        private @Nullable StringContainer lastStringContainer = null;
 
         private InjectorProcessor() {
+        }
+
+        public boolean hasItBeenProcessedYetFor(@NotNull StringContainer stringContainer) {
+            return Objects.nonNull(lastStringContainer) && lastStringContainer.equals(stringContainer);
         }
 
         public void setMinecraftSuggestionsCallback(
@@ -86,6 +90,7 @@ public class SuggestionsAPI implements ClientModInitializer {
         }
 
         public boolean process(@NotNull StringContainer stringContainer) {
+            lastStringContainer = stringContainer;
             cachedSuggestions = new HashMap<>();
             injectorsCache = new HashMap<>();
 
