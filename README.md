@@ -1,14 +1,13 @@
-Version: **[v1.0.3]** | [[v1.0.4]](/README_v1.0.4.md)
-
-# Suggestions API v1.0.3
+# Suggestions API v1.0.4
 ![](/preview/preview.png)
 
 This library is injected into the Minecraft source code, which is responsible for the logic of Minecraft suggestions in chat, in order to provide a more convenient wrapper for adding or changing suggestions. Currently, the library contains interfaces for:
 - adding suggestions synchronous/asynchronous based on the text entered by the user in the text input field
 - changing suggestions render
 - processing events related to suggestions:
-  - on session inited
-  - on suggestion selected
+    - on session inited
+    - on suggestion selected
+- replacing suggestions created by non Suggestions API
 
 for which the library provides ready-made implementations in the form of:
 - always shown suggestion (texted suggestion with condition to always show it)
@@ -34,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.3"
+    modImplementation "maven.modrinth:suggestions-api:1.0.4"
 }
 ```
 </details>
@@ -47,7 +46,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.3")
+    modImplementation("maven.modrinth", "suggestions-api", "1.0.4")
 }
 ```
 </details>
@@ -56,7 +55,7 @@ dependencies {
 Quick documentation that includes the basics of the library.
 
 ### What types of embedded suggestions are there?
-The `Suggestion` interface is located in the directory `io.github.aratakileo.suggestionsapi.suggestion`.
+The `Suggestion` interface is located in `io.github.aratakileo.suggestionsapi.suggestion`.
 
 The library has two built-in types of suggestions. Below are the functions for their initialization:
 - `Suggestion.simple(...)` - simple (just text)
@@ -89,40 +88,55 @@ or
 final var anotherSimpleSuggetion = Suggestion.simple("bonjour!", String::equalsIgnoreCase);
 ```
 
-If you want the suggestions to be displayed always, regardless of the entered text, you can specify condition `(suggestionText, currentExpression) -> true` that is used by default when initializing suggestions in functions `Suggestion.alwaysShown(...)` (as an alternative to the function `Suggestion.simple(...)`) and `Suggestion.alwaysShownWithIcon(...)` (as an alternative to the function `Suggestion.withIcon(...)`):
+The default condition for functions `Suggestion.simple(...)` and `Suggestion.withIcon(...)` is `(suggestionText, currentExpression) -> suggestionText.toLowerCase().startsWith(currentExpression.toLowerCase())` or `Suggestion::DEFAULT_CONDITION`.
+
+If you want the suggestions to be displayed always, regardless of the entered text, you can specify condition `(suggestionText, currentExpression) -> true` or `Suggestion::ALWAYS_SHOW_CONDITION` that is used by default when initializing suggestions in functions `Suggestion.alwaysShown(...)` (as an alternative to the function `Suggestion.simple(...)`) and `Suggestion.alwaysShownWithIcon(...)` (as an alternative to the function `Suggestion.withIcon(...)`):
 
 ```java
 final var alwaysShownSuggestion = Suggestion.alwaysShown("bonjour!");
 ```
 
 ### How to add new suggestions to the game?
-The `SuggestionsAPI` interface is located in the directory `io.github.aratakileo.suggestionsapi`.
+You can add new suggestions to the game using the `Injector` interface that is located in `io.github.aratakileo.suggestionsapi.injector`.
 
-To add your own suggestion use method `SuggestionsAPI.addSuggsetion(...)`:
-```java
-SuggestionsAPI.addSuggestion(simpleSuggestion);
-```
-
-If you are not sure whether the resources will be loaded by the time the resource-dependent suggestions (such as a suggestion with an icon) are initialized, then you can use the method `SuggestionsAPI.addResourceDependedContainer(...)` to avoid game crash:
-```java
-SuggestionsAPI.addResourceDependedContainer(
-        () -> List.of(Suggestion.withIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")))
-);
-```
-
-### How to dynamically inject suggestions?
-The `Injector` interface is located in the directory `io.github.aratakileo.suggestionsapi.injector`.
-
-There are two types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
+There are two basic types of injectors: simple and asynchronous. To initialize them, the library also provides functions. The first argument of which will be a regex pattern.
 
 To register an injector, it is necessary to pass it to function `SuggestionsAPI.registerInjector(...)` as a single argument.
 
-To create a simple injector, there is a function `Injector.simple(...)`. As the second argument, the function takes a lambda that describes the process of generating a list of suggestions and returns it. At the same time, the lambda has its own two arguments, the first of which contains a string with the current expression (the text in the input field that touches the cursor with the right edge and is found according to the specified pattern), and the second contains a number that is an offset between the beginning of the current expression and the original expression (the text in the input field between the nearest left space and the cursor). As an example, the addition of suggestions of numbers when trying to enter any of them is presented:
+To create a simple injector, there is a function `Injector.simple(...)` that returns `SuggestionsInjector`. Let's add two new simple suggestions (`Injector.ANYTHING_WITHOUT_SPACES_PATTERN` is `Pattern.compile("\\S+$")`):
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
+        (stringContainer, startOffset) -> List.of(
+                Suggestion.alwaysShownWithIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")),
+                alwaysShownSuggestion
+        )  // variables from the example above
+));
+```
+
+The result will look like this:
+
+![](/preview/preview.png)
+
+If you want your suggestions not to be displayed when entering a command, you can change the code as follows:
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Injector.ANYTHING_WITHOUT_SPACES_PATTERN,
+        (stringContainer, startOffset) -> stringContainer.getContext().isNotCommand() ? List.of(
+                Suggestion.alwaysShownWithIcon("barrier", new ResourceLocation("minecraft", "textures/item/barrier.png")),
+                alwaysShownSuggestion
+        ) : null  // variables from the example above
+));
+```
+
+As the second argument, function `Injector.simple(...)` takes a lambda that describes the process of generating a list of suggestions and returns it. At the same time, the lambda has its own two arguments, the first of which contains a string with the current expression (the text in the input field that touches the cursor with the right edge and is found according to the specified pattern), and the second contains a number that is an offset between the beginning of the current expression and the original expression (the text in the input field between the nearest left space and the cursor). As an example, the addition of suggestions of numbers when trying to enter any of them is presented:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile(":[A-Za-z0-9]*(:)?$"),
-        (currentExpression, startOffset) -> Stream.of(
+        (stringContainer, startOffset) -> Stream.of(
             "67487",
             "nothing",
             "bedrock",
@@ -136,9 +150,9 @@ or
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[A-Za-z0-9]+$"),
-        (currentExpression, startOffset) -> Stream.of(
-            "Hi, " + currentExpression.substring(startOffset) + '!',
-            '"' + currentExpression.substring(startOffset) + '"'
+        (stringContainer, startOffset) -> Stream.of(
+            "Hi, " + stringContainer.getContent().substring(startOffset) + '!',
+            '"' + stringContainer.getContent().substring(startOffset) + '"'
         ).map(Suggestion::alwaysShown).toList()
 ));
 ```
@@ -148,34 +162,11 @@ or
 ```java
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile(":[0-9]*(:)?$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
             .toList()
-));
-
-SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile("[0-9]$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
-            .boxed()
-            .map(Objects::toString)
-            .map(Suggestion::alwaysShown)
-            .toList()
-));
-```
-
-By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `true` as the third (last) argument. For example:
-
-```java
-SuggestionsAPI.registerInjector(Injector.simple(
-        Pattern.compile(":[0-9]*(:)?$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(1000, 1010)
-            .boxed()
-            .map(Objects::toString)
-            .map(Suggestion::alwaysShown)
-            .toList(),
-        true
 ));
 
 
@@ -184,21 +175,52 @@ SuggestionsAPI.registerInjector(Injector.simple(
 
 SuggestionsAPI.registerInjector(Injector.simple(
         Pattern.compile("[0-9]$"),
-        (currentExpression, startOffset) -> IntStream.rangeClosed(0, 9)
+        (stringContainer, startOffset) -> IntStream.rangeClosed(0, 9)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList()
+));
+```
+
+By default, if detected string according to the regex pattern of the injector is part of another detected string according to the regex pattern of another injector, then the suggestions of the injector whose string is nested are ignored. This mechanism can be disabled for a specific injector by specifying `InputRelatedInjector.NestingStatus.ALL_NESTABLE` as the third (last) argument. For example:
+
+```java
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile(":[0-9]*(:)?$"),
+        (stringContainer, startOffset) -> IntStream.rangeClosed(1000, 1010)
             .boxed()
             .map(Objects::toString)
             .map(Suggestion::alwaysShown)
             .toList(),
-        true
+        InputRelatedInjector.NestingStatus.ALL_NESTABLE
+));
+
+
+// The suggestions of this injector will appear if the suggestions from the injector above appear
+
+SuggestionsAPI.registerInjector(Injector.simple(
+        Pattern.compile("[0-9]$"),
+        (stringContainer, startOffset) -> IntStream.rangeClosed(0, 9)
+            .boxed()
+            .map(Objects::toString)
+            .map(Suggestion::alwaysShown)
+            .toList(),
+        InputRelatedInjector.NestingStatus.ALL_NESTABLE
 ));
 ```
+
+There are other possible values for this argument:
+- `InputRelatedInjector.NestingStatus.NOT_NESTABLE` - uses by default
+- `InputRelatedInjector.NestingStatus.ONLY_API_NESTABLE` - allow nesting only for the suggestions added using the Suggestions API
+- `InputRelatedInjector.NestingStatus.ONLY_NON_API_NESTABLE` - allow nesting only for the suggestions added outside the Suggestions API
 
 If you need the suggestions to appear synchronously, you can use the function `Injector.async(...)` to initialize the asynchronous injector. The injector initialized with this function provides a mechanism for canceling the current asynchronous process if a request for a new one has been received, and the current process has not had time to complete by this time. This function is similar to the previous one, but this time the second argument, namely lambda, returns a lambda without arguments, which will be launched as an asynchronous process, and has three arguments, the last of which is a lambda that accepts a list of new suggestions and should be used inside the lambda of an asynchronous process. For example:
 
 ```java
 SuggestionsAPI.registerInjector(Injector.async(
         /* insert your pattern here */,
-        (currentExpression, startOffset) -> {
+        (stringContainer, startOffset) -> {
             /* insert your async processing code here */
             
             return /* insert list of suggestion here */;
@@ -206,4 +228,21 @@ SuggestionsAPI.registerInjector(Injector.async(
 ));
 ```
 
-Just as in the case of the previous function, a third argument can be specified in this function.
+Function `Injector.async(...)` returns `AsyncInjector`. Just as in the case of the previous function, a third argument can be specified in this function.
+
+### Can I replace Suggestions with new instances?
+The Suggestions API prohibits implicit replacement of suggestions, but it allows you to replace suggestions that were not added using it (that is, suggestions that were added by Minecraft or other mods that do not use the Suggestions API). If the suggestion you need has not yet been replaced by another mod, you can replace the suggestion using the `ReplacementInjector` that is located in `io.github.aratakileo.suggestionsapi.injector`. For example:
+
+```java
+// To check this, start entering the command `give @s minecraft:barrier` in the chat or in the command block
+SuggestionsAPI.registerInjector(Injector.replacement(
+        nonApiSuggestion -> nonApiSuggestion.equals("minecraft:barrier") ? Suggestion.withIcon(
+                nonApiSuggestion,
+                new ResourceLocation("minecraft", "textures/item/barrier.png")
+        ) : null
+));
+```
+
+The result will look like this:
+
+![](/preview/preview-1.png)
