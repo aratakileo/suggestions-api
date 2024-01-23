@@ -13,16 +13,16 @@ public interface InputRelatedInjector extends Injector {
 
     enum NestingStatus {
         ALL_NESTABLE,
-        ONLY_VANILLA_NESTABLE,
-        ONLY_SUGGESTIONS_API_NESTABLE,
+        ONLY_NON_API_NESTABLE,
+        ONLY_API_NESTABLE,
         NOT_NESTABLE;
 
-        public boolean isVanillaNestable() {
-            return this == ALL_NESTABLE || this == ONLY_VANILLA_NESTABLE;
+        public boolean isNonApiNestable() {
+            return this == ALL_NESTABLE || this == ONLY_NON_API_NESTABLE;
         }
 
-        public boolean isSuggestionsApiNestable() {
-            return this == ALL_NESTABLE || this == ONLY_SUGGESTIONS_API_NESTABLE;
+        public boolean isApiNestable() {
+            return this == ALL_NESTABLE || this == ONLY_API_NESTABLE;
         }
     }
 }

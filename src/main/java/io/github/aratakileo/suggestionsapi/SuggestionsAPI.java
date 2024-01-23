@@ -5,6 +5,7 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -109,7 +110,7 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                 if (
                         minOffset != -1
-                                && !injector.getNestingStatus().isSuggestionsApiNestable()
+                                && !injector.getNestingStatus().isApiNestable()
                                 && injector.getStartOffset() > minOffset
                 ) continue;
 
@@ -141,7 +142,7 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                 if (
                         minOffset != -1
-                                && !injector.getNestingStatus().isSuggestionsApiNestable()
+                                && !injector.getNestingStatus().isApiNestable()
                                 && injector.getStartOffset() > minOffset
                 ) continue;
 
@@ -180,7 +181,7 @@ public class SuggestionsAPI implements ClientModInitializer {
                 if (injector instanceof SuggestionsInjector suggestionsInjector) {
                     isValidInjector = true;
 
-                    if (nonApiSuggestions.isEmpty() || suggestionsInjector.getNestingStatus().isVanillaNestable()) {
+                    if (nonApiSuggestions.isEmpty() || suggestionsInjector.getNestingStatus().isNonApiNestable()) {
                         final var suggestions = suggestionsInjector.getSuggestions(stringContainer);
 
                         if (Objects.nonNull(suggestions) && !suggestions.isEmpty()) {
@@ -230,7 +231,7 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                     if (
                             Objects.nonNull(asyncApplier) && (
-                                    nonApiSuggestions.isEmpty() || asyncInjector.getNestingStatus().isVanillaNestable()
+                                    nonApiSuggestions.isEmpty() || asyncInjector.getNestingStatus().isNonApiNestable()
                             )
                     ) {
                         asyncInjectorBuffer.put(asyncInjector, () -> {
