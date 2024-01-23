@@ -5,7 +5,6 @@ import io.github.aratakileo.suggestionsapi.injector.*;
 import io.github.aratakileo.suggestionsapi.suggestion.*;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,7 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 public class SuggestionsAPI implements ClientModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
     private final static HashMap<@NotNull AsyncInjector, @NotNull CompletableFuture<@NotNull Void>> asyncProcessors
             = new HashMap<>();
     private final static ArrayList<@NotNull Injector> injectors = new ArrayList<>();
@@ -108,7 +107,11 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                 final var injector = (InputRelatedInjector) injectorEntry.getKey();
 
-                if (minOffset != -1 && !injector.isNestable() && injector.getStartOffset() > minOffset) continue;
+                if (
+                        minOffset != -1
+                                && !injector.getNestingStatus().isSuggestionsApiNestable()
+                                && injector.getStartOffset() > minOffset
+                ) continue;
 
                 for (final var suggestion: injectorEntry.getValue()) {
                     final var offset = injector.getStartOffset();
@@ -136,7 +139,11 @@ public class SuggestionsAPI implements ClientModInitializer {
             for (final var injectorEntry: asyncInjectorsBuffer.entrySet()) {
                 final var injector = injectorEntry.getKey();
 
-                if (minOffset != -1 && !injector.isNestable() && injector.getStartOffset() > minOffset) continue;
+                if (
+                        minOffset != -1
+                                && !injector.getNestingStatus().isSuggestionsApiNestable()
+                                && injector.getStartOffset() > minOffset
+                ) continue;
 
                 hasUsedAsyncInjector = true;
 
@@ -173,12 +180,14 @@ public class SuggestionsAPI implements ClientModInitializer {
                 if (injector instanceof SuggestionsInjector suggestionsInjector) {
                     isValidInjector = true;
 
-                    final var suggestions = suggestionsInjector.getSuggestions(stringContainer);
+                    if (nonApiSuggestions.isEmpty() || suggestionsInjector.getNestingStatus().isVanillaNestable()) {
+                        final var suggestions = suggestionsInjector.getSuggestions(stringContainer);
 
-                    if (Objects.nonNull(suggestions) && !suggestions.isEmpty()) {
-                        injectorsCache.put(suggestionsInjector, suggestions);
+                        if (Objects.nonNull(suggestions) && !suggestions.isEmpty()) {
+                            injectorsCache.put(suggestionsInjector, suggestions);
 
-                        isActiveInjector = true;
+                            isActiveInjector = true;
+                        }
                     }
                 }
 
@@ -219,7 +228,11 @@ public class SuggestionsAPI implements ClientModInitializer {
 
                     final var asyncApplier = asyncInjector.getAsyncApplier(stringContainer);
 
-                    if (Objects.nonNull(asyncApplier)) {
+                    if (
+                            Objects.nonNull(asyncApplier) && (
+                                    nonApiSuggestions.isEmpty() || asyncInjector.getNestingStatus().isVanillaNestable()
+                            )
+                    ) {
                         asyncInjectorBuffer.put(asyncInjector, () -> {
                             final var suggestionList = asyncApplier.get();
 

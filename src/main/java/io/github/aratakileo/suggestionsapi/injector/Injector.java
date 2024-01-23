@@ -25,7 +25,7 @@ public interface Injector {
                     @Nullable List<Suggestion>
                     > uncheckedSuggestionsGetter
     ) {
-        return simple(pattern, uncheckedSuggestionsGetter, false);
+        return simple(pattern, uncheckedSuggestionsGetter, InputRelatedInjector.NestingStatus.NOT_NESTABLE);
     }
 
     static @NotNull SuggestionsInjector simple(
@@ -35,7 +35,7 @@ public interface Injector {
                     @NotNull Integer,
                     @Nullable List<Suggestion>
                     > uncheckedSuggestionsGetter,
-            boolean isNestable
+            @NotNull InputRelatedInjector.NestingStatus nestingStatus
     ) {
         return new SuggestionsInjector() {
             private int startOffset = 0;
@@ -57,8 +57,8 @@ public interface Injector {
             }
 
             @Override
-            public boolean isNestable() {
-                return isNestable;
+            public @NotNull NestingStatus getNestingStatus() {
+                return nestingStatus;
             }
         };
     }
@@ -71,7 +71,7 @@ public interface Injector {
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter
     ) {
-        return async(pattern, uncheckedSupplierGetter, false);
+        return async(pattern, uncheckedSupplierGetter, InputRelatedInjector.NestingStatus.NOT_NESTABLE);
     }
 
     static @NotNull AsyncInjector async(
@@ -81,7 +81,7 @@ public interface Injector {
                     @NotNull Integer,
                     @Nullable List<Suggestion>
                     > uncheckedSupplierGetter,
-            boolean isNestable
+            @NotNull InputRelatedInjector.NestingStatus nestingStatus
     ) {
         return new AsyncInjector() {
             private int startOffset = 0;
@@ -105,8 +105,8 @@ public interface Injector {
             }
 
             @Override
-            public boolean isNestable() {
-                return isNestable;
+            public @NotNull NestingStatus getNestingStatus() {
+                return nestingStatus;
             }
         };
     }
