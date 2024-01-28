@@ -3,11 +3,12 @@ plugins {
     id 'org.spongepowered.mixin' version '0.7.+'
 }
 
+
 ext.platform = 'forge'
 
 apply from: '../util.gradle'
 
-archivesBaseName = "${project.archives_base_name}-${getVersionFullName(platform)}"
+archivesBaseName = "${project.archives_base_name}-${ext.getVersionFullName(platform)}"
 
 minecraft {
     mappings channel: 'official', version: minecraft_version
@@ -49,3 +50,16 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 jar.finalizedBy('reobfJar')
+
+def refmap_file = "suggestionsapi.refmap.json"
+
+processResources {
+    from project(":general").sourceSets.main.resources
+
+    inputs.property "refmap_file", refmap_file
+    filteringCharset "UTF-8"
+
+    filesMatching("suggestionsapi.mixins.json") {
+        expand "refmap_file": refmap_file
+    }
+}

@@ -7,7 +7,7 @@ ext.platform = 'fabric'
 
 apply from: '../util.gradle'
 
-archivesBaseName = "${project.archives_base_name}-${getVersionFullName(platform)}"
+archivesBaseName = "${project.archives_base_name}-${ext.getVersionFullName(platform)}"
 
 dependencies {
     // To change the versions see the gradle.properties file
@@ -40,5 +40,18 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
+    }
+}
+
+def refmap_file = "$archivesBaseName-refmap.json"
+
+processResources {
+    from project(":general").sourceSets.main.resources
+
+    inputs.property "refmap_file", refmap_file
+    filteringCharset "UTF-8"
+
+    filesMatching("suggestionsapi.mixins.json") {
+        expand "refmap_file": refmap_file
     }
 }

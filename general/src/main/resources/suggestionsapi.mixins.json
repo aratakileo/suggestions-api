@@ -12,5 +12,5 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "refmap": "suggestionsapi.refmap.json"
+  "refmap": "${refmap_file}"
 }

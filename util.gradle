@@ -32,4 +32,9 @@ processResources {
         expand "version": getVersionFullName(platform),
                 "minecraft_version": getMinecraftDependsVersion(platform)
     }
+
+    filesMatching("META-INF/mods.toml") {
+        expand "version": getVersionFullName(platform),
+                "minecraft_version": getMinecraftDependsVersion(platform)
+    }
 }
