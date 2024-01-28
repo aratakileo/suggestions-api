@@ -3,9 +3,10 @@ plugins {
     id 'org.spongepowered.mixin' version '0.7.+'
 }
 
+ext.platform = 'forge'
+
 apply from: '../util.gradle'
 
-ext.platform = 'forge'
 archivesBaseName = "${project.archives_base_name}-${getVersionFullName(platform)}"
 
 minecraft {
@@ -40,15 +41,11 @@ dependencies {
 
 mixin {
     add sourceSets.main, "suggestionsapi.refmap.json"
-    config "assets/suggestionsapi/suggestionsapi.mixins.json"
+    config "suggestionsapi.mixins.json"
 }
 
 tasks.withType(JavaCompile).configureEach {
     source(project(":general").sourceSets.main.allSource)
-}
-
-processResources {
-    from project(":general").sourceSets.main.resources
 }
 
 jar.finalizedBy('reobfJar')

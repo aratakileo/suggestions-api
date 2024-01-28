@@ -3,9 +3,10 @@ plugins {
     id 'maven-publish'
 }
 
+ext.platform = 'fabric'
+
 apply from: '../util.gradle'
 
-ext.platform = 'fabric'
 archivesBaseName = "${project.archives_base_name}-${getVersionFullName(platform)}"
 
 dependencies {
@@ -25,17 +26,6 @@ tasks.withType(JavaCompile).configureEach {
     source(project(":general").sourceSets.main.allSource)
 }
 
-processResources {
-    from project(":general").sourceSets.main.resources
-
-    inputs.property "version", getVersionFullName(platform)
-    filteringCharset "UTF-8"
-
-    filesMatching("fabric.mod.json") {
-        expand "version": getVersionFullName(platform)
-    }
-}
-
 // configure the maven publication
 publishing {
     publications {
@@ -50,20 +40,5 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
-    }
-}
-
-loom {
-    runs {
-        client {
-            client()
-            ideConfigGenerated(true)
-            runDir("../run")
-        }
-        server {
-            server()
-            ideConfigGenerated(true)
-            runDir("../run")
-        }
     }
 }
