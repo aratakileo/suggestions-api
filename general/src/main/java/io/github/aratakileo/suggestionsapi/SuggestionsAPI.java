@@ -2,9 +2,8 @@ package io.github.aratakileo.suggestionsapi;
 
 import com.mojang.brigadier.context.StringRange;
 import io.github.aratakileo.suggestionsapi.injector.*;
-import io.github.aratakileo.suggestionsapi.suggestion.*;
+import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import io.github.aratakileo.suggestionsapi.util.StringContainer;
-import net.fabricmc.api.ClientModInitializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -15,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class SuggestionsAPI implements ClientModInitializer {
+public class SuggestionsAPI {
     private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionsAPI.class);
     private final static HashMap<@NotNull AsyncInjector, @NotNull CompletableFuture<@NotNull Void>> asyncProcessors
             = new HashMap<>();
@@ -24,10 +23,6 @@ public class SuggestionsAPI implements ClientModInitializer {
 
     private static HashMap<@NotNull String, @NotNull Suggestion> cachedSuggestions = null;
     private static HashMap<@NotNull Injector, @NotNull Collection<@NotNull Suggestion>> injectorsCache = null;
-
-    @Override
-    public void onInitializeClient() {
-    }
 
     public static boolean hasCachedSuggestion(@NotNull String suggestionText) {
         return Objects.nonNull(cachedSuggestions) && cachedSuggestions.containsKey(suggestionText);

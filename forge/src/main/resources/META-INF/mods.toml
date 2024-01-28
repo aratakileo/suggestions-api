@@ -1,0 +1,22 @@
+modLoader="javafml"
+loaderVersion="[46,)"
+license="LGPL-3.0"
+
+[[mods]]
+modId="suggestionsapi"
+version="${file.jarVersion}"
+displayName="Suggestions API"
+logoFile= "assets/suggestionsapi/icon.png"
+description='''
+API for working with Minecraft suggestions
+'''
+authors="Arataki Leo"
+displayURL="https://modrinth.com/mod/suggestions-api"
+issueTrackerURL="https://github.com/aratakileo/suggestions-api/issues"
+
+[[dependencies.suggestionsapi]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="CLIENT"

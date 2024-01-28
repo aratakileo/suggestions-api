@@ -1,0 +1,54 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+apply from: '../util.gradle'
+
+ext.platform = 'forge'
+archivesBaseName = "${project.archives_base_name}-${getVersionFullName(platform)}"
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+
+    runs {
+        configureEach {
+            workingDirectory rootProject.file('run')
+            ideaModule "${rootProject.name}.${project.name}.main"
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods {
+                emogg {
+                    source sourceSets.main
+                    source project(":general").sourceSets.main
+                }
+            }
+        }
+
+        client {}
+        server {}
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    compileOnly project(":general")
+
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+}
+
+mixin {
+    add sourceSets.main, "suggestionsapi.refmap.json"
+    config "assets/suggestionsapi/suggestionsapi.mixins.json"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    source(project(":general").sourceSets.main.allSource)
+}
+
+processResources {
+    from project(":general").sourceSets.main.resources
+}
+
+jar.finalizedBy('reobfJar')
