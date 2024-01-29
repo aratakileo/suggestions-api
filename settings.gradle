@@ -26,4 +26,4 @@ pluginManagement {
 }
 
 rootProject.name = 'suggestions-api'
-include('general', 'fabric', 'forge', 'neoforge')
+include('general', 'fabric', 'forge')
