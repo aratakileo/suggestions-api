@@ -23,7 +23,8 @@ These mods use the Suggestions API:
 ### Getting started
 Merge the following with your
 
-<details><summary><code>build.gradle</code></summary>
+<details><summary><code>Fabric</code> or <code>Quilt</code></summary>
+  <details><summary><code>build.gradle</code></summary>
 
 ```groovy
 repositories {
@@ -36,9 +37,9 @@ dependencies {
     modImplementation "maven.modrinth:suggestions-api:1.0.4"
 }
 ```
-</details>
+  </details>
 
-<details><summary><code>build.gradle.kts</code></summary>
+  <details><summary><code>build.gradle.kts</code></summary>
 
 ```groovy
 repositories {
@@ -49,6 +50,37 @@ dependencies {
     modImplementation("maven.modrinth", "suggestions-api", "1.0.4")
 }
 ```
+  </details>
+</details>
+
+<details><summary><code>Forge</code> or <code>Neoforge</code></summary>
+  <details><summary><code>build.gradle</code></summary>
+
+```groovy
+repositories {
+    maven {
+        url = "https://api.modrinth.com/maven"
+    }
+}
+
+dependencies {
+    modImplementation "maven.modrinth:suggestions-api:C3xTdeXT"
+}
+```
+  </details>
+
+  <details><summary><code>build.gradle.kts</code></summary>
+
+```groovy
+repositories {
+    maven("https://api.modrinth.com/maven")
+}
+
+dependencies {
+    modImplementation("maven.modrinth", "suggestions-api", "C3xTdeXT")
+}
+```
+  </details>
 </details>
 
 # Quick DOCS
