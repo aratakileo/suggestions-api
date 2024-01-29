@@ -15,11 +15,6 @@
   "license": "LGPL-3.0",
   "icon": "assets/suggestionsapi/icon.png",
   "environment": "client",
-  "entrypoints": {
-    "client": [
-      "io.github.aratakileo.suggestionsapi.SuggestionsAPI"
-    ]
-  },
   "mixins": [
     "suggestionsapi.mixins.json"
   ],
@@ -29,5 +24,8 @@
         "library"
       ]
     }
+  },
+  "depends": {
+    "minecraft": "${minecraft_version}"
   }
 }
