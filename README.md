@@ -1,4 +1,4 @@
-# Suggestions API v1.0.4
+# Suggestions API v1.0.5
 ![](/preview/preview.png)
 
 This library is injected into the Minecraft source code, which is responsible for the logic of Minecraft suggestions in chat, in order to provide a more convenient wrapper for adding or changing suggestions. Currently, the library contains interfaces for:
@@ -21,10 +21,9 @@ These mods use the Suggestions API:
 - [JIME](https://modrinth.com/mod/jime)
 
 ### Getting started
-Merge the following with your
+Merge the following with your. Below is an example with a version for Fabric or Quit. If you are developing for Forge or Neoforge, then replace `fabric` with `forge` (works this way since Suggestions API v1.0.4)
 
-<details><summary><code>Fabric</code> or <code>Quilt</code></summary>
-  <details><summary><code>build.gradle</code></summary>
+<details><summary><code>build.gradle</code></summary>
 
 ```groovy
 repositories {
@@ -34,42 +33,12 @@ repositories {
 }
 
 dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.4"
+    modImplementation "maven.modrinth:suggestions-api:1.0.5+fabric"
 }
 ```
-  </details>
-
-  <details><summary><code>build.gradle.kts</code></summary>
-
-```groovy
-repositories {
-    maven("https://api.modrinth.com/maven")
-}
-
-dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.4")
-}
-```
-  </details>
 </details>
 
-<details><summary><code>Forge</code> or <code>Neoforge</code></summary>
-  <details><summary><code>build.gradle</code></summary>
-
-```groovy
-repositories {
-    maven {
-        url = "https://api.modrinth.com/maven"
-    }
-}
-
-dependencies {
-    modImplementation "maven.modrinth:suggestions-api:C3xTdeXT"
-}
-```
-  </details>
-
-  <details><summary><code>build.gradle.kts</code></summary>
+<details><summary><code>build.gradle.kts</code></summary>
 
 ```groovy
 repositories {
@@ -77,10 +46,9 @@ repositories {
 }
 
 dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "C3xTdeXT")
+    modImplementation("maven.modrinth", "suggestions-api", "1.0.5+fabric")
 }
 ```
-  </details>
 </details>
 
 # Quick DOCS
@@ -245,7 +213,7 @@ SuggestionsAPI.registerInjector(Injector.simple(
 There are other possible values for this argument:
 - `InputRelatedInjector.NestingStatus.NOT_NESTABLE` - uses by default
 - `InputRelatedInjector.NestingStatus.ONLY_API_NESTABLE` - allow nesting only for the suggestions added using the Suggestions API
-- `InputRelatedInjector.NestingStatus.ONLY_NON_API_NESTABLE` - allow nesting only for the suggestions added outside the Suggestions API
+- `InputRelatedInjector.NestingStatus.ONLY_NON_API_NESTABLE` - allow nesting only for the suggestions added outside the Suggestions API [deprecated]
 
 If you need the suggestions to appear synchronously, you can use the function `Injector.async(...)` to initialize the asynchronous injector. The injector initialized with this function provides a mechanism for canceling the current asynchronous process if a request for a new one has been received, and the current process has not had time to complete by this time. This function is similar to the previous one, but this time the second argument, namely lambda, returns a lambda without arguments, which will be launched as an asynchronous process, and has three arguments, the last of which is a lambda that accepts a list of new suggestions and should be used inside the lambda of an asynchronous process. For example:
 
@@ -262,7 +230,7 @@ SuggestionsAPI.registerInjector(Injector.async(
 
 Function `Injector.async(...)` returns `AsyncInjector`. Just as in the case of the previous function, a third argument can be specified in this function.
 
-### Can I replace Suggestions with new instances?
+### Can I replace Suggestions with new instances? [deprecated]
 The Suggestions API prohibits implicit replacement of suggestions, but it allows you to replace suggestions that were not added using it (that is, suggestions that were added by Minecraft or other mods that do not use the Suggestions API). If the suggestion you need has not yet been replaced by another mod, you can replace the suggestion using the `ReplacementInjector` that is located in `io.github.aratakileo.suggestionsapi.injector`. For example:
 
 ```java
