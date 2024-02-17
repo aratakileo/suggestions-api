@@ -161,6 +161,7 @@ public class SuggestionsAPI {
             return true;
         }
 
+        @SuppressWarnings("deprecation")
         private int processInjectors(
                 @NotNull StringContainer stringContainer,
                 @NotNull HashMap<@NotNull AsyncInjector, @NotNull Runnable> asyncInjectorBuffer,

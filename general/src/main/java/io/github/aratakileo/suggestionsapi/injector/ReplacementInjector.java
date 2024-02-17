@@ -4,6 +4,7 @@ import io.github.aratakileo.suggestionsapi.suggestion.Suggestion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated
 public interface ReplacementInjector extends Injector {
     @Nullable Suggestion getReplace(@NotNull String nonApiSuggestion);
 }

@@ -111,6 +111,7 @@ public interface Injector {
         };
     }
 
+    @Deprecated
     static @NotNull ReplacementInjector replacement(@NotNull ReplacementInjector replacementInjector) {
         return replacementInjector;
     }

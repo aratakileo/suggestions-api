@@ -13,10 +13,12 @@ public interface InputRelatedInjector extends Injector {
 
     enum NestingStatus {
         ALL_NESTABLE,
+        @Deprecated
         ONLY_NON_API_NESTABLE,
         ONLY_API_NESTABLE,
         NOT_NESTABLE;
 
+        @Deprecated
         public boolean isNonApiNestable() {
             return this == ALL_NESTABLE || this == ONLY_NON_API_NESTABLE;
         }

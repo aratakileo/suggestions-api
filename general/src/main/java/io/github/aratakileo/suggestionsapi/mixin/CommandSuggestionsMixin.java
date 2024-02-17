@@ -14,10 +14,12 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +53,25 @@ public abstract class CommandSuggestionsMixin {
         SuggestionsAPI.InjectorProcessor.initSession();
     }
 
+    @Unique
+    private List<String> suggestionsApi$getNonApiSuggestions() {
+//        if (Objects.isNull(pendingSuggestions)) return new ArrayList<>();
+//
+//        final var returnable = Lists.newArrayList(
+//                pendingSuggestions.join()
+//                        .getList()
+//                        .stream()
+//                        .map(Suggestion::getText)
+//                        .toList()
+//        );
+//
+//        returnable.removeIf(SuggestionsAPI::hasCachedSuggestion);
+//
+//        return returnable;
+
+        return Lists.newArrayList();  // stub
+    }
+
     @Inject(method = "updateCommandInfo", at = @At("TAIL"), cancellable = true)
     private void updateCommandInfo(CallbackInfo ci){
         final var injectorProcessor = SuggestionsAPI.getInjectorProcessor();
@@ -72,28 +93,8 @@ public abstract class CommandSuggestionsMixin {
                             textUpToCursor,
                             suggestionList
                     ));
-
-                    pendingSuggestions.thenRun(() -> {
-                        if (pendingSuggestions.isDone())
-                            ((CommandSuggestions) (Object) this).showSuggestions(false);
-                    });
                 },
-                () -> {
-                    if (Objects.isNull(pendingSuggestions))
-                        return List.of();
-
-                    final var returnable = Lists.newArrayList(
-                            pendingSuggestions.join()
-                                    .getList()
-                                    .stream()
-                                    .map(Suggestion::getText)
-                                    .toList()
-                    );
-
-                    returnable.removeIf(SuggestionsAPI::hasCachedSuggestion);
-
-                    return returnable;
-                }
+                this::suggestionsApi$getNonApiSuggestions
         );
 
         if (injectorProcessor.process(stringContainer))
