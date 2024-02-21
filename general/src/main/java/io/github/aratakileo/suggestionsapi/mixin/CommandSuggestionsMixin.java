@@ -93,6 +93,11 @@ public abstract class CommandSuggestionsMixin {
                             textUpToCursor,
                             suggestionList
                     ));
+
+                    pendingSuggestions.thenRun(() -> {
+                        if (pendingSuggestions.isDone())
+                            ((CommandSuggestions) (Object) this).showSuggestions(false);
+                    });
                 },
                 this::suggestionsApi$getNonApiSuggestions
         );
