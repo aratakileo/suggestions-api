@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "maven.modrinth:suggestions-api:1.0.5+fabric"
+    modImplementation "maven.modrinth:suggestions-api:1.0.6+fabric"
 }
 ```
 </details>
@@ -46,7 +46,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation("maven.modrinth", "suggestions-api", "1.0.5+fabric")
+    modImplementation("maven.modrinth", "suggestions-api", "1.0.6+fabric")
 }
 ```
 </details>
